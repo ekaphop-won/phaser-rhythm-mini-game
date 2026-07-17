@@ -91,6 +91,7 @@ class AudioManager {
         this.ctx = null;
         this.initialized = false;
         this.songBuffer = null;
+        this.encodedSong = null;
         this.songSource = null;
         this.songStartTime = 0;
         this.songOffset = 0;
@@ -113,19 +114,22 @@ class AudioManager {
     async loadSong(url) {
         if (this.loadPromise) return this.loadPromise;
         this.loadPromise = (async () => {
-            await this.init();
             const resp = await fetch(url);
-            const buf = await resp.arrayBuffer();
-            this.songBuffer = await this.ctx.decodeAudioData(buf);
-            this.songDuration = this.songBuffer.duration;
+            if (!resp.ok) throw new Error(`audio HTTP ${resp.status}`);
+            this.encodedSong = await resp.arrayBuffer();
             this.isLoaded = true;
-            return this.songDuration;
+            return true;
         })();
         return this.loadPromise;
     }
 
     async startSong(offset = 0) {
-        if (!this.initialized || !this.songBuffer) return;
+        await this.init();
+        if (!this.songBuffer && this.encodedSong) {
+            this.songBuffer = await this.ctx.decodeAudioData(this.encodedSong.slice(0));
+            this.songDuration = this.songBuffer.duration;
+        }
+        if (!this.songBuffer) return;
         if (this.songSource) this.stopSong();
 
         if (this.ctx.state === 'suspended') {
@@ -801,6 +805,7 @@ const config = {
     width: G.W,
     height: G.H,
     parent: 'game-container',
+    audio: { noAudio: true },
     backgroundColor: '#0a0a1a',
     input: { activePointers: 3 },
     scale: { mode: Phaser.Scale.FIT, autoCenter: Phaser.Scale.CENTER_BOTH },
