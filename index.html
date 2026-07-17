@@ -1,0 +1,815 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, maximum-scale=1.0, minimum-scale=1.0">
+<title>Bunny Tea Parade — Rhythm Game</title>
+<style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    html, body {
+        width: 100%; height: 100%;
+        background: #0a0a1a;
+        overflow: hidden;
+        touch-action: none;
+        -webkit-user-select: none;
+        user-select: none;
+        -webkit-touch-callout: none;
+    }
+    canvas { display: block; }
+    #loading {
+        position: fixed; inset: 0; z-index: 100;
+        display: flex; flex-direction: column;
+        align-items: center; justify-content: center;
+        background: #0a0a1a; color: #fff;
+        font-family: monospace;
+        transition: opacity 0.5s;
+    }
+    #loading.hidden { opacity: 0; pointer-events: none; }
+    #loading .spinner {
+        width: 40px; height: 40px;
+        border: 3px solid #1a1a3a;
+        border-top-color: #ffd700;
+        border-radius: 50%;
+        animation: spin 0.8s linear infinite;
+        margin-bottom: 16px;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+    #loading p { font-size: 14px; color: #888; }
+</style>
+</head>
+<body>
+<div id="loading"><div class="spinner"></div><p>Loading song...</p></div>
+<div id="game-container"></div>
+
+<script src="https://cdn.jsdelivr.net/npm/phaser@3.80.1/dist/phaser.min.js"></script>
+<script>
+// ============================================================
+//  BUNNY TEA PARADE — Varied-Pattern + VFX Rhythm Game
+//  Phaser 3.80  |  4 lanes  |  Mobile-first
+//
+//  Beatmap: librosa onset-detected positions snapped to audio
+//  Patterns: section-based (intro/verse/pre-hook/hook/outro)
+//  Hook: dense chords + rapid alternation
+//  VFX: Phaser 3.80 particle emitter (star/spark explosion)
+// ============================================================
+
+// 104 notes (91 onset beats + 13 chord doubles in hook section)
+// Variable timing — follows actual audio events, not fixed grid
+let BN_L = [0,1,2,3,3,2,1,0,0,2,1,3,0,2,1,3,0,3,1,2,0,3,1,2,1,2,0,3,2,3,0,1,0,2,0,2,0,2,3,1,3,0,1,3,0,1,3,1,0,2,1,0,2,0,1,2,3,2,1,1,0,3,0,1,2,0,1,0,3,2,3,1,0,1,2,3,2,0,1,0,2,1,3,3,1,2,0,0,3,1,2,2,1,0,3,0,1,2,3,3,2,1,0,0];
+let BN_T = [21,672,1344,1973,2677,3338,4021,4629,5344,6005,6677,7317,8010,8682,9322,9973,10645,11328,12000,12682,13333,14005,14656,15317,15989,16661,17333,17973,18688,19328,20010,20661,21333,21952,22634,23296,23989,24661,25322,25962,26624,27317,27317,27989,28650,28650,29312,29973,29973,30645,31306,31306,32000,32640,32640,33301,33973,33973,34656,35285,35285,35946,36650,36650,37344,37973,37973,38634,39296,39296,40010,40618,40618,41301,41952,41952,42613,43296,43296,43946,44586,45301,45930,46613,47285,47957,48629,49290,49952,50645,51274,51957,52608,53280,53962,54602,55232,55946,56618,57269,57930,58624,59264,59946];
+
+let TOTAL_NOTES = BN_L.length;
+let SONG_DURATION_MS = 60000;
+
+const G = {
+    W: 400,
+    H: 720,
+    LANE_COUNT: 4,
+    LANE_COLORS: [0xff4757, 0xffa502, 0x2ed573, 0x1e90ff],
+    LANE_COLORS_HEX: ['#ff4757','#ffa502','#2ed573','#1e90ff'],
+    HIT_ZONE_Y: 620,
+    LEAD_TIME: 2000,
+    PERFECT_WIN: 80,
+    GREAT_WIN: 150,
+    GOOD_WIN: 250,
+    SCORE_PERFECT: 300,
+    SCORE_GREAT: 200,
+    SCORE_GOOD: 100,
+    AUDIO_PATH: 'audio/bunny-tea-parade-adjusted.mp3',
+};
+
+const BEATMAP_NOTES = [];
+for (let i = 0; i < TOTAL_NOTES; i++) {
+    BEATMAP_NOTES.push({ lane: BN_L[i], time: BN_T[i], spawnTime: BN_T[i] - G.LEAD_TIME });
+}
+
+// ============================================================
+//  AUDIO MANAGER
+// ============================================================
+class AudioManager {
+    constructor() {
+        this.ctx = null;
+        this.initialized = false;
+        this.songBuffer = null;
+        this.songSource = null;
+        this.songStartTime = 0;
+        this.songOffset = 0;
+        this.isSongPlaying = false;
+        this.songDuration = 0;
+        this.isLoaded = false;
+        this.loadPromise = null;
+        this.masterGain = null;
+    }
+
+    async init() {
+        if (this.initialized) return;
+        this.ctx = new (window.AudioContext || window.webkitAudioContext)();
+        this.masterGain = this.ctx.createGain();
+        this.masterGain.gain.value = 0.5;
+        this.masterGain.connect(this.ctx.destination);
+        this.initialized = true;
+    }
+
+    async loadSong(url) {
+        if (this.loadPromise) return this.loadPromise;
+        this.loadPromise = (async () => {
+            await this.init();
+            const resp = await fetch(url);
+            const buf = await resp.arrayBuffer();
+            this.songBuffer = await this.ctx.decodeAudioData(buf);
+            this.songDuration = this.songBuffer.duration;
+            this.isLoaded = true;
+            return this.songDuration;
+        })();
+        return this.loadPromise;
+    }
+
+    async startSong(offset = 0) {
+        if (!this.initialized || !this.songBuffer) return;
+        if (this.songSource) this.stopSong();
+
+        if (this.ctx.state === 'suspended') {
+            try { await this.ctx.resume(); } catch(e) {}
+        }
+
+        this.songSource = this.ctx.createBufferSource();
+        this.songSource.buffer = this.songBuffer;
+        this.songGain = this.ctx.createGain();
+        this.songGain.gain.value = 1;
+        this.songSource.connect(this.songGain);
+        this.songGain.connect(this.masterGain);
+        this.songSource.start(0, offset);
+        this.songStartTime = this.ctx.currentTime - offset;
+        this.songOffset = offset;
+        this.isSongPlaying = true;
+    }
+
+    stopSong() {
+        if (this.songSource) {
+            try { this.songSource.stop(); } catch(e) {}
+            this.songSource.disconnect();
+            this.songSource = null;
+        }
+        if (this.songGain) { this.songGain.disconnect(); this.songGain = null; }
+        this.isSongPlaying = false;
+    }
+
+    getSongTime() {
+        if (!this.isSongPlaying) return this.songOffset;
+        return Math.max(0, this.ctx.currentTime - this.songStartTime);
+    }
+
+    playHit(quality) {
+        if (!this.ctx) return;
+        const now = this.ctx.currentTime;
+        const bufSize = Math.floor(0.05 * this.ctx.sampleRate);
+        const buf = this.ctx.createBuffer(1, bufSize, this.ctx.sampleRate);
+        const data = buf.getChannelData(0);
+        for (let i = 0; i < bufSize; i++)
+            data[i] = (Math.random() * 2 - 1) * Math.exp(-i / (bufSize * 0.06));
+        const noise = this.ctx.createBufferSource();
+        noise.buffer = buf;
+        const gain = this.ctx.createGain();
+        const vol = quality === 'perfect' ? 0.25 : quality === 'great' ? 0.18 : 0.12;
+        gain.gain.setValueAtTime(vol, now);
+        gain.gain.exponentialRampToValueAtTime(0.001, now + 0.04);
+        const osc = this.ctx.createOscillator();
+        const oscGain = this.ctx.createGain();
+        osc.type = 'sine';
+        osc.frequency.setValueAtTime(2000, now);
+        oscGain.gain.setValueAtTime(vol * 0.5, now);
+        oscGain.gain.exponentialRampToValueAtTime(0.001, now + 0.02);
+        noise.connect(gain); osc.connect(oscGain);
+        gain.connect(this.masterGain); oscGain.connect(this.masterGain);
+        noise.start(now); osc.start(now);
+        noise.stop(now + 0.05); osc.stop(now + 0.02);
+    }
+
+    playMiss() {
+        if (!this.ctx) return;
+        const now = this.ctx.currentTime;
+        const osc = this.ctx.createOscillator();
+        const gain = this.ctx.createGain();
+        osc.connect(gain); gain.connect(this.masterGain);
+        osc.type = 'sawtooth';
+        osc.frequency.setValueAtTime(80, now);
+        osc.frequency.linearRampToValueAtTime(40, now + 0.15);
+        gain.gain.setValueAtTime(0.1, now);
+        gain.gain.exponentialRampToValueAtTime(0.001, now + 0.15);
+        osc.start(now); osc.stop(now + 0.15);
+    }
+}
+
+// ============================================================
+//  PHASER GAME SCENE
+// ============================================================
+class GameScene extends Phaser.Scene {
+    constructor() {
+        super({ key: 'GameScene' });
+    }
+
+    init() {
+        this.score = 0;
+        this.combo = 0;
+        this.maxCombo = 0;
+        this.hitNotes = 0;
+        this.perfectCount = 0;
+        this.greatCount = 0;
+        this.goodCount = 0;
+        this.missCount = 0;
+        this.gameTime = 0;
+        this.isPlaying = false;
+        this.isFinished = false;
+        this.nextNoteIdx = 0;
+        this.activeNoteSprites = [];
+        this.lastGameTime = 0;
+        this.totalNotes = TOTAL_NOTES;
+        this.songDuration = SONG_DURATION_MS;
+        this.laneWidth = 70;
+        this.laneGap = 10;
+        this.bgGfx = null;
+        this.laneGfx = null;
+        this.hitZoneGfx = null;
+        this.particleGfx = null;
+        this.scoreText = null;
+        this.comboText = null;
+        this.judgmentText = null;
+        this.audio = null;
+    }
+
+    create() {
+        const { W, H } = G;
+        this.cameras.main.setBackgroundColor('#0a0a1a');
+        this.bgGfx = this.add.graphics();
+        this.drawBackground();
+
+        const totalLaneW = G.LANE_COUNT * this.laneWidth + (G.LANE_COUNT - 1) * this.laneGap;
+        this.laneStartX = (W - totalLaneW) / 2;
+
+        this.laneGfx = this.add.graphics();
+        this.drawLanes();
+
+        this.hitZoneGfx = this.add.graphics();
+        this.drawHitZone(0);
+
+        // Generate particle textures
+        this.generateParticleTextures();
+
+        // Create particle emitters (one per lane color)
+        this.particleEmitters = {};
+        for (let i = 0; i < G.LANE_COUNT; i++) {
+            this.particleEmitters[i] = this.add.particles(0, 0, 'spark', {
+                speed: { min: 80, max: 300 },
+                angle: { min: 0, max: 360 },
+                scale: { start: 1.2, end: 0 },
+                lifespan: { min: 200, max: 500 },
+                gravityY: 200,
+                tint: G.LANE_COLORS[i],
+                emitting: false,
+                quantity: 12,
+            }).setDepth(15);
+        }
+        // White sparkle emitter for perfect hits
+        this.perfectEmitter = this.add.particles(0, 0, 'spark', {
+            speed: { min: 100, max: 400 },
+            angle: { min: 0, max: 360 },
+            scale: { start: 1.5, end: 0 },
+            lifespan: { min: 300, max: 700 },
+            gravityY: 100,
+            tint: [0xffd700, 0xffffff, 0xffaa00],
+            emitting: false,
+            quantity: 20,
+        }).setDepth(15);
+
+        this.scoreText = this.add.text(16, 16, '0', {
+            fontFamily: 'monospace', fontSize: '32px',
+            color: '#ffffff', fontStyle: 'bold',
+        }).setDepth(10);
+
+        this.comboText = this.add.text(W / 2, 40, '', {
+            fontFamily: 'monospace', fontSize: '22px',
+            color: '#ffd700',
+        }).setOrigin(0.5).setDepth(10).setAlpha(0);
+
+        this.judgmentText = this.add.text(W / 2, G.HIT_ZONE_Y - 60, '', {
+            fontFamily: 'monospace', fontSize: '24px',
+            color: '#ffffff', fontStyle: 'bold',
+        }).setOrigin(0.5).setDepth(10).setAlpha(0);
+
+        // Lane flash overlay (lights up when tapped)
+        this.laneFlash = {};
+        for (let i = 0; i < G.LANE_COUNT; i++) {
+            const x = this.laneStartX + i * (this.laneWidth + this.laneGap);
+            this.laneFlash[i] = this.add.graphics().setDepth(8).setAlpha(0);
+            this.laneFlash[i].fillStyle(G.LANE_COLORS[i], 1);
+            this.laneFlash[i].fillRect(x + 4, G.HIT_ZONE_Y - 14, this.laneWidth - 8, 28);
+        }
+
+        if (!window.audio) window.audio = new AudioManager();
+        this.audio = window.audio;
+
+        this.input.on('pointerdown', (pointer) => this.handleTap(pointer));
+
+        this.showLoadingOverlay();
+    }
+
+    generateParticleTextures() {
+        // 1. Star/spark texture (6-point star)
+        const gfx = this.make.graphics({ add: false });
+        gfx.fillStyle(0xffffff);
+        gfx.beginPath();
+        for (let i = 0; i < 6; i++) {
+            const a = (i * 2 * Math.PI / 6) - Math.PI/2;
+            const r = i % 2 === 0 ? 5 : 2;
+            const px = 5 + Math.cos(a) * r;
+            const py = 5 + Math.sin(a) * r;
+            i === 0 ? gfx.moveTo(px, py) : gfx.lineTo(px, py);
+        }
+        gfx.closePath(); gfx.fillPath();
+        // Glow dot in center
+        gfx.fillStyle(0xffffff, 0.6);
+        gfx.fillCircle(5, 5, 1.5);
+        gfx.generateTexture('spark', 10, 10);
+        gfx.destroy();
+
+        // 2. Glow circle (for lane flash VFX)
+        const gfx2 = this.make.graphics({ add: false });
+        gfx2.fillStyle(0xffffff, 0.3);
+        gfx2.fillCircle(8, 8, 8);
+        gfx2.fillStyle(0xffffff, 0.7);
+        gfx2.fillCircle(8, 8, 4);
+        gfx2.generateTexture('glow', 16, 16);
+        gfx2.destroy();
+    }
+
+    // ---- Drawing ----
+    drawBackground() {
+        const { W, H } = G;
+        const g = this.bgGfx;
+        g.fillStyle(0x0f0f2a, 1);
+        g.fillRect(0, 0, W, 60);
+        g.lineStyle(1, 0x1a1a3a, 0.5);
+        for (let y = 100; y < G.HIT_ZONE_Y; y += 60) {
+            g.beginPath(); g.moveTo(40, y); g.lineTo(W - 40, y); g.strokePath();
+        }
+    }
+
+    drawLanes() {
+        const g = this.laneGfx;
+        const { LANE_COUNT, HIT_ZONE_Y } = G;
+        for (let i = 0; i < LANE_COUNT; i++) {
+            const x = this.laneStartX + i * (this.laneWidth + this.laneGap);
+            g.fillStyle(G.LANE_COLORS[i], 0.04);
+            g.fillRect(x, 60, this.laneWidth, HIT_ZONE_Y - 60);
+            g.lineStyle(1, G.LANE_COLORS[i], 0.15);
+            g.beginPath(); g.moveTo(x, 60); g.lineTo(x, HIT_ZONE_Y); g.strokePath();
+            g.beginPath(); g.moveTo(x + this.laneWidth, 60); g.lineTo(x + this.laneWidth, HIT_ZONE_Y); g.strokePath();
+        }
+    }
+
+    drawHitZone(intensity) {
+        const g = this.hitZoneGfx;
+        g.clear();
+        const { LANE_COUNT, HIT_ZONE_Y } = G;
+        const laneW = this.laneWidth;
+        g.fillStyle(0xffffff, 0.03 + intensity * 0.08);
+        g.fillRect(this.laneStartX - 4, HIT_ZONE_Y - 20,
+                   LANE_COUNT * laneW + (LANE_COUNT - 1) * this.laneGap + 8, 40);
+        for (let i = 0; i < LANE_COUNT; i++) {
+            const x = this.laneStartX + i * (laneW + this.laneGap);
+            g.fillStyle(G.LANE_COLORS[i], 0.2 + intensity * 0.4);
+            g.fillRect(x + 4, HIT_ZONE_Y - 2, laneW - 8, 4);
+            g.lineStyle(2, G.LANE_COLORS[i], 0.4 + intensity * 0.3);
+            g.strokeRect(x + 2, HIT_ZONE_Y - 14, laneW - 4, 28);
+        }
+    }
+
+    spawnNoteSprite(noteData) {
+        const laneW = this.laneWidth;
+        const x = this.laneStartX + noteData.lane * (laneW + this.laneGap);
+        const noteW = laneW - 12;
+        const noteH = 18;
+        const gfx = this.add.graphics().setDepth(5);
+
+        // Glow
+        gfx.fillStyle(G.LANE_COLORS[noteData.lane], 0.12);
+        gfx.fillRoundedRect(x + 2, -2, noteW + 8, noteH + 4, 7);
+        // Note body
+        gfx.fillStyle(G.LANE_COLORS[noteData.lane], 0.9);
+        gfx.fillRoundedRect(x + 6, 0, noteW, noteH, 5);
+        // Highlight
+        gfx.fillStyle(0xffffff, 0.25);
+        gfx.fillRoundedRect(x + 8, 2, noteW - 8, 6, 3);
+
+        return { gfx, x };
+    }
+
+    // ---- Input ----
+    handleTap(pointer) {
+        if (!this.isPlaying || this.isFinished) return;
+        if (pointer.y < 60) return;
+
+        const lane = this.getLaneAtX(pointer.x);
+        if (lane < 0) return;
+
+        let best = null;
+        let bestDiff = Infinity;
+        for (const n of this.activeNoteSprites) {
+            if (n.hit || n.missed || n.lane !== lane) continue;
+            const d = Math.abs(n.targetTime - this.gameTime);
+            if (d < bestDiff) { bestDiff = d; best = n; }
+        }
+        if (!best || bestDiff > G.GOOD_WIN) return;
+
+        best.hit = true;
+
+        let quality, judgeText, scoreAdd, judgeColor;
+        if (bestDiff <= G.PERFECT_WIN) {
+            quality = 'perfect';
+            judgeText = '✨ Perfect!';
+            scoreAdd = G.SCORE_PERFECT;
+            judgeColor = '#ffd700';
+            this.perfectCount++;
+        } else if (bestDiff <= G.GREAT_WIN) {
+            quality = 'great';
+            judgeText = '👍 Great!';
+            scoreAdd = G.SCORE_GREAT;
+            judgeColor = '#2ed573';
+            this.greatCount++;
+        } else {
+            quality = 'good';
+            judgeText = '👌 Good';
+            scoreAdd = G.SCORE_GOOD;
+            judgeColor = '#1e90ff';
+            this.goodCount++;
+        }
+
+        this.score += scoreAdd;
+        this.combo++;
+        if (this.combo > this.maxCombo) this.maxCombo = this.combo;
+        this.hitNotes++;
+
+        this.audio.playHit(quality);
+
+        // ---- VFX: Note hit animation ----
+        const { gfx, x: noteX } = best.sprite;
+        const centerX = noteX + this.laneWidth / 2;
+        const centerY = G.HIT_ZONE_Y;
+
+        // Note burst
+        gfx.clear();
+        gfx.fillStyle(G.LANE_COLORS[lane], 1);
+        gfx.fillRoundedRect(noteX + 6, 0, this.laneWidth - 12, 18, 5);
+        gfx.fillStyle(0xffffff, 0.6);
+        gfx.fillRoundedRect(noteX + 8, 2, this.laneWidth - 16, 6, 3);
+        this.tweens.add({
+            targets: gfx, scaleX: 1.6, scaleY: 1.6, alpha: 0,
+            duration: 250, ease: 'Power3',
+            onComplete: () => gfx.destroy(),
+        });
+
+        // Lane flash
+        this.laneFlash[lane].setAlpha(0.6);
+        this.tweens.add({
+            targets: this.laneFlash[lane],
+            alpha: 0,
+            duration: 150,
+            ease: 'Power2',
+        });
+
+        // Particle explosion
+        if (quality === 'perfect') {
+            this.perfectEmitter.explode(20, centerX, centerY);
+        } else {
+            this.particleEmitters[lane].explode(12, centerX, centerY);
+        }
+
+        // Camera shake on perfect
+        if (quality === 'perfect') {
+            this.cameras.main.shake(80, 0.003);
+        }
+
+        this.drawHitZone(quality === 'perfect' ? 1 : 0.5);
+        this.showJudgment(judgeText, judgeColor);
+        this.showScorePopup(scoreAdd, lane);
+        this.updateComboDisplay();
+    }
+
+    getLaneAtX(px) {
+        for (let i = 0; i < G.LANE_COUNT; i++) {
+            const left = this.laneStartX + i * (this.laneWidth + this.laneGap);
+            if (px >= left - 5 && px <= left + this.laneWidth + 5) return i;
+        }
+        return -1;
+    }
+
+    showJudgment(text, color) {
+        this.judgmentText.setText(text).setColor(color).setAlpha(1).setScale(0.5);
+        this.tweens.add({
+            targets: this.judgmentText, scaleX: 1.3, scaleY: 1.3, alpha: 0,
+            duration: 500, ease: 'Power2',
+            onComplete: () => this.judgmentText.setScale(1),
+        });
+    }
+
+    showScorePopup(points, lane) {
+        const x = this.laneStartX + lane * (this.laneWidth + this.laneGap) + this.laneWidth / 2;
+        const txt = this.add.text(x, G.HIT_ZONE_Y - 30, `+${points}`, {
+            fontFamily: 'monospace', fontSize: '16px',
+            color: '#ffd700', fontStyle: 'bold',
+        }).setOrigin(0.5).setDepth(10);
+        this.tweens.add({
+            targets: txt, y: txt.y - 60, alpha: 0,
+            duration: 400, ease: 'Power2',
+            onComplete: () => txt.destroy(),
+        });
+    }
+
+    updateComboDisplay() {
+        if (this.combo >= 20) {
+            this.comboText.setText(`🔥🔥 ${this.combo}x COMBO!!!`).setAlpha(1).setScale(0.8);
+            this.tweens.add({ targets: this.comboText, scaleX: 1.2, scaleY: 1.2, duration: 100, ease: 'Back.easeOut' });
+        } else if (this.combo >= 5) {
+            this.comboText.setText(`🔥 ${this.combo}x Combo!`).setAlpha(1).setScale(0.8);
+            this.tweens.add({ targets: this.comboText, scaleX: 1, scaleY: 1, duration: 150, ease: 'Back.easeOut' });
+        } else if (this.combo > 0) {
+            this.comboText.setAlpha(1).setText(`${this.combo}x`);
+        } else {
+            this.comboText.setAlpha(0);
+        }
+    }
+
+    // ---- Section indicator ----
+    showSectionBanner(text) {
+        const { W } = G;
+        const banner = this.add.text(W / 2, G.HIT_ZONE_Y - 120, text, {
+            fontFamily: 'monospace', fontSize: '14px',
+            color: '#ffd700', fontStyle: 'bold',
+        }).setOrigin(0.5).setDepth(12).setAlpha(0);
+        this.tweens.add({
+            targets: banner, alpha: 0.8, y: banner.y - 20,
+            duration: 300, ease: 'Power2',
+            yoyo: true, hold: 600,
+            onComplete: () => banner.destroy(),
+        });
+    }
+
+    // ---- Main update ----
+    update(time, delta) {
+        if (!this.isPlaying) return;
+
+        this.gameTime = this.audio.getSongTime() * 1000;
+
+        if (this.gameTime < this.lastGameTime && this.lastGameTime > 500) {
+            this.gameTime = this.lastGameTime + delta;
+        }
+
+        // Section detection for banners
+        if (this.gameTime >= 100 && this.gameTime < 100 + delta * 2 && !this._introSeen) {
+            this._introSeen = true;
+        }
+        if (this.gameTime >= 10645 && this.gameTime < 10645 + delta * 2 && !this._verseSeen) {
+            this._verseSeen = true;
+            this.showSectionBanner('🎵 Verse');
+        }
+        if (this.gameTime >= 23989 && this.gameTime < 23989 + delta * 2 && !this._preHookSeen) {
+            this._preHookSeen = true;
+            this.showSectionBanner('⚡ Build Up');
+        }
+        if (this.gameTime >= 27317 && this.gameTime < 27317 + delta * 2 && !this._hookSeen) {
+            this._hookSeen = true;
+            this.showSectionBanner('🔥 HOOK!');
+            // Flash hit zone
+            this.drawHitZone(1);
+            this.cameras.main.flash(200, 255, 215, 0, false, null, null, 0.1);
+        }
+        if (this.gameTime >= 43946 && this.gameTime < 43946 + delta * 2 && !this._outroSeen) {
+            this._outroSeen = true;
+            this.showSectionBanner('🌅 Outro');
+        }
+
+        // Spawn notes
+        while (this.nextNoteIdx < BEATMAP_NOTES.length &&
+               this.gameTime >= BEATMAP_NOTES[this.nextNoteIdx].spawnTime) {
+            const nd = BEATMAP_NOTES[this.nextNoteIdx];
+            const sprite = this.spawnNoteSprite(nd);
+            this.activeNoteSprites.push({
+                idx: this.nextNoteIdx,
+                lane: nd.lane,
+                targetTime: nd.time,
+                hit: false,
+                missed: false,
+                sprite,
+            });
+            this.nextNoteIdx++;
+        }
+
+        // Update note positions & check misses
+        for (const n of this.activeNoteSprites) {
+            if (n.hit || n.missed) continue;
+            const progress = (this.gameTime - (n.targetTime - G.LEAD_TIME)) / G.LEAD_TIME;
+            n.sprite.gfx.y = -30 + progress * (G.HIT_ZONE_Y + 30);
+
+            if (this.gameTime > n.targetTime + G.GOOD_WIN) {
+                n.missed = true;
+                this.combo = 0;
+                this.missCount++;
+                this.updateComboDisplay();
+                this.audio.playMiss();
+                this.showJudgment('💔 Miss', '#ff4757');
+                this.cameras.main.flash(100, 255, 0, 0, false, null, null, 0.08);
+                this.tweens.add({
+                    targets: n.sprite.gfx, alpha: 0, duration: 200,
+                    onComplete: () => n.sprite.gfx.destroy(),
+                });
+            }
+        }
+
+        this.activeNoteSprites = this.activeNoteSprites.filter(n => n.sprite.gfx.active);
+
+        // Update score
+        this.scoreText.setText(this.score.toLocaleString());
+        const prog = Math.min(this.gameTime / this.songDuration, 1);
+
+        // Progress bar
+        this.bgGfx.fillStyle(0x1a1a3a, 1);
+        this.bgGfx.fillRect(0, 0, G.W, 4);
+        this.bgGfx.fillStyle(0xffd700, 0.7);
+        this.bgGfx.fillRect(0, 0, G.W * prog, 4);
+
+        if (this.gameTime >= this.songDuration + 500 && !this.isFinished) {
+            this.endGame();
+        }
+        this.lastGameTime = this.gameTime;
+    }
+
+    endGame() {
+        this.isPlaying = false;
+        this.isFinished = true;
+        this.audio.stopSong();
+
+        for (const n of this.activeNoteSprites) {
+            if (n.sprite && n.sprite.gfx && n.sprite.gfx.active) {
+                n.sprite.gfx.setAlpha(0.2);
+            }
+        }
+
+        const accuracy = this.totalNotes > 0 ? this.hitNotes / this.totalNotes : 0;
+        let rating, ratingColor;
+        if (accuracy >= 0.95) { rating = 'SS'; ratingColor = '#ffd700'; }
+        else if (accuracy >= 0.85) { rating = 'S'; ratingColor = '#ffa502'; }
+        else if (accuracy >= 0.75) { rating = 'A'; ratingColor = '#2ed573'; }
+        else if (accuracy >= 0.60) { rating = 'B'; ratingColor = '#1e90ff'; }
+        else if (accuracy >= 0.40) { rating = 'C'; ratingColor = '#a855f7'; }
+        else { rating = 'D'; ratingColor = '#ff4757'; }
+
+        const { W, H } = G;
+        const overlay = this.add.graphics().setDepth(50);
+        overlay.fillStyle(0x000000, 0.75);
+        overlay.fillRect(0, 0, W, H);
+
+        const cx = W / 2;
+        let yPos = 100;
+
+        this.add.text(cx, yPos, rating, {
+            fontFamily: 'monospace', fontSize: '80px',
+            color: ratingColor, fontStyle: 'bold',
+        }).setOrigin(0.5).setDepth(51);
+
+        yPos += 85;
+        this.add.text(cx, yPos, '🎵 Bunny Tea Parade', {
+            fontFamily: 'monospace', fontSize: '18px', color: '#ffffff',
+        }).setOrigin(0.5).setDepth(51);
+
+        yPos += 40;
+
+        const stats = [
+            `คะแนน: ${this.score.toLocaleString()}`,
+            `Max Combo: ${this.maxCombo}x`,
+            `✨ Perfect ${this.perfectCount}  👍 Great ${this.greatCount}  👌 Good ${this.goodCount}`,
+            `💔 Miss: ${this.missCount}`,
+            `ความแม่นยำ: ${(accuracy * 100).toFixed(1)}%`,
+        ];
+        for (const line of stats) {
+            this.add.text(cx, yPos, line, {
+                fontFamily: 'monospace', fontSize: '15px', color: '#cccccc',
+            }).setOrigin(0.5).setDepth(51);
+            yPos += 26;
+        }
+
+        yPos += 35;
+
+        const btnBg = this.add.graphics().setDepth(51);
+        const btnX = cx - 90, btnY = yPos, btnW = 180, btnH = 50;
+        btnBg.fillStyle(0xffd700, 0.9);
+        btnBg.fillRoundedRect(btnX, btnY, btnW, btnH, 12);
+        this.add.text(cx, btnY + btnH / 2, '🔄 เล่นอีกครั้ง', {
+            fontFamily: 'monospace', fontSize: '16px', color: '#1a1a1a', fontStyle: 'bold',
+        }).setOrigin(0.5).setDepth(52);
+
+        const rz = this.add.zone(cx, btnY + btnH / 2, btnW, btnH)
+            .setInteractive({ useHandCursor: true }).setDepth(53);
+        rz.on('pointerdown', () => { this.scene.restart(); });
+        rz.on('pointerover', () => { btnBg.clear(); btnBg.fillStyle(0xffed4a, 1); btnBg.fillRoundedRect(btnX, btnY, btnW, btnH, 12); });
+        rz.on('pointerout', () => { btnBg.clear(); btnBg.fillStyle(0xffd700, 0.9); btnBg.fillRoundedRect(btnX, btnY, btnW, btnH, 12); });
+    }
+
+    // ---- UI Overlays ----
+    showLoadingOverlay() {
+        const { W, H } = G;
+        this.loadingGfx = this.add.graphics().setDepth(20);
+        this.loadingGfx.fillStyle(0x000000, 0.85);
+        this.loadingGfx.fillRect(0, 0, W, H);
+        this.loadingText = this.add.text(W / 2, H / 2, '🎵 Loading song...', {
+            fontFamily: 'monospace', fontSize: '18px', color: '#888888',
+        }).setOrigin(0.5).setDepth(21);
+        this.loadAudio();
+    }
+
+    async loadAudio() {
+        try {
+            await this.audio.loadSong(G.AUDIO_PATH);
+            this.loadingGfx.destroy();
+            this.loadingText.destroy();
+            document.getElementById('loading').classList.add('hidden');
+            this.showStartScreen();
+        } catch (e) {
+            this.loadingText.setText('❌ Failed to load audio\nTap to retry');
+            this.loadingText.setColor('#ff4757');
+            this.input.once('pointerdown', () => this.loadAudio());
+        }
+    }
+
+    showStartScreen() {
+        const { W, H } = G;
+        this.overlay = this.add.graphics().setDepth(20);
+        this.overlay.fillStyle(0x000000, 0.7);
+        this.overlay.fillRect(0, 0, W, H);
+
+        this.startTitle = this.add.text(W / 2, H / 2 - 60, '🐰 Bunny Tea Parade', {
+            fontFamily: 'monospace', fontSize: '28px',
+            color: '#ffffff', fontStyle: 'bold',
+        }).setOrigin(0.5).setDepth(21);
+
+        this.startSubtitle = this.add.text(W / 2, H / 2 - 20, '🎯 Onset-Sync + Varied Patterns', {
+            fontFamily: 'monospace', fontSize: '16px',
+            color: '#ffd700',
+        }).setOrigin(0.5).setDepth(21);
+
+        this.startTapText = this.add.text(W / 2, H / 2 + 25, '👆 แตะเพื่อเริ่ม!', {
+            fontFamily: 'monospace', fontSize: '16px',
+            color: '#cccccc',
+        }).setOrigin(0.5).setDepth(21);
+
+        this.startInfo = this.add.text(W / 2, H / 2 + 65,
+            `${this.totalNotes} โน๊ต • Hook มี ♫ Chords • 60 วิ`, {
+            fontFamily: 'monospace', fontSize: '12px',
+            color: '#666666',
+        }).setOrigin(0.5).setDepth(21);
+
+        this.tweens.add({
+            targets: this.startTapText,
+            alpha: 0.3,
+            yoyo: true,
+            repeat: -1,
+            duration: 600,
+        });
+
+        this.input.once('pointerdown', () => this.startGame());
+    }
+
+    async startGame() {
+        this.overlay.destroy();
+        if (this.startTitle) this.startTitle.destroy();
+        if (this.startSubtitle) this.startSubtitle.destroy();
+        if (this.startTapText) this.startTapText.destroy();
+        if (this.startInfo) this.startInfo.destroy();
+
+        await this.audio.startSong(0);
+        this.isPlaying = true;
+        this.nextNoteIdx = 0;
+        this.gameTime = 0;
+        this.lastGameTime = 0;
+    }
+}
+
+// ============================================================
+//  PHASER CONFIG
+// ============================================================
+const config = {
+    type: Phaser.AUTO,
+    width: G.W,
+    height: G.H,
+    parent: 'game-container',
+    backgroundColor: '#0a0a1a',
+    input: { activePointers: 3 },
+    scale: { mode: Phaser.Scale.FIT, autoCenter: Phaser.Scale.CENTER_BOTH },
+    scene: [GameScene],
+};
+
+async function loadExternalBeatmap(){if(location.protocol==='file:')return false;const jsonPath=G.AUDIO_PATH.replace(/\.[^.]+$/i,'.json');const response=await fetch(jsonPath+'?v='+Date.now());if(!response.ok)throw new Error('beatmap JSON HTTP '+response.status);const data=await response.json();if(!Array.isArray(data.notes)||!data.notes.length)throw new Error('beatmap JSON ไม่มี notes');const notes=data.notes.map(note=>({lane:Math.max(0,Math.min(3,Number(note.lane)||0)),time:Math.max(0,Number(note.time)||0)})).sort((a,b)=>a.time-b.time);BN_L=notes.map(note=>note.lane);BN_T=notes.map(note=>note.time);TOTAL_NOTES=BN_L.length;if(Number.isFinite(Number(data.duration)))SONG_DURATION_MS=Number(data.duration);console.info('Loaded external beatmap:',jsonPath,TOTAL_NOTES+' notes')}
+async function boot(){try{await loadExternalBeatmap()}catch(error){console.warn('External beatmap unavailable; using embedded fallback.',error.message)}new Phaser.Game(config)}
+boot();
+</script>
+</body>
+</html>
