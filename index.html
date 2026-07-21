@@ -1004,6 +1004,15 @@ class GameScene extends Phaser.Scene {
         const { W, H } = G;
         const cx = W / 2, cy = H / 2;
         const PW = 340, PH = 220;
+
+        // Auto-pause if game is playing (same pattern as togglePause)
+        const _wasPlaying = this.isPlaying && !this.isPaused && !this.isFinished;
+        if (_wasPlaying) {
+            this.pauseStartedAt = this.audio.getSongTime();
+            this.audio.stopSong();
+            this.isPaused = true;
+        }
+
         this.settingsOverlay = this.add.container(cx, cy).setDepth(70);
 
         const bg = this.add.graphics();
@@ -1023,12 +1032,12 @@ class GameScene extends Phaser.Scene {
         const offHint = this.add.text(-PW / 2 + 20, -PH / 2 + 76, 'negative = notes later · positive = notes earlier', {
             fontFamily: 'monospace', fontSize: '10px', color: '#666',
         });
-        // Inline HTML range (Phaser doesn't have native slider)
+        // Inline HTML range — use ABSOLUTE game coords (not relative to container)
         const offEl = document.createElement('input');
         offEl.type = 'range'; offEl.min = -300; offEl.max = 300; offEl.step = 10;
         offEl.value = SETTINGS.offset;
         offEl.style.cssText = 'width:280px;margin:4px 0 8px;accent-color:#55d6ff';
-        const wrapper = this.add.dom(-PW / 2 + 20, -PH / 2 + 100, offEl);
+        const wrapper = this.add.dom(cx - PW / 2 + 20, cy - PH / 2 + 100, offEl);
         offEl.addEventListener('input', () => {
             SETTINGS.offset = +offEl.value;
             offLabel.setText(`Offset: ${SETTINGS.offset|0} ms`);
@@ -1042,7 +1051,7 @@ class GameScene extends Phaser.Scene {
         sfxEl.type = 'range'; sfxEl.min = 0; sfxEl.max = 100; sfxEl.step = 5;
         sfxEl.value = SETTINGS.sfx * 100;
         sfxEl.style.cssText = 'width:280px;margin:4px 0 8px;accent-color:#55d6ff';
-        this.add.dom(-PW / 2 + 20, -PH / 2 + 180, sfxEl);
+        this.add.dom(cx - PW / 2 + 20, cy - PH / 2 + 180, sfxEl);
         sfxEl.addEventListener('input', () => {
             SETTINGS.sfx = (+sfxEl.value) / 100;
             sfxLabel.setText(`SFX volume: ${(SETTINGS.sfx*100)|0}%`);
@@ -1061,12 +1070,21 @@ class GameScene extends Phaser.Scene {
             saveSettings(SETTINGS);
             this.settingsOverlay.destroy();
             this.settingsOverlay = null;
+            if (_wasPlaying) {
+                this.isPaused = false;
+                this.pauseDelta += this.audio.getSongTime() - this.pauseStartedAt;
+                this.audio.startSong(this.pauseStartedAt);
+            }
         });
 
         this.settingsOverlay.add([bg, title, offLabel, offHint, wrapper, sfxLabel, sfxEl, closeBg, closeText, closeZone]);
         } catch (e) {
             console.warn('Settings error:', e);
             if (this.settingsOverlay) { this.settingsOverlay.destroy(); this.settingsOverlay = null; }
+            if (_wasPlaying) {
+                this.isPaused = false;
+                this.audio.startSong(this.pauseStartedAt);
+            }
         }
     }
 
