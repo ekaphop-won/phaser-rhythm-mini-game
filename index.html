@@ -374,14 +374,14 @@ class GameScene extends Phaser.Scene {
 
         this.input.on('pointerdown', (pointer) => this.handleTap(pointer));
 
-        // Keyboard support (D F J K = lanes 0-3) + Space=pause
+        // Keyboard support (D F J K = lanes 0-3) + Space/Esc = Settings (unified pause)
         this._keyHandlers = {
             keydown: (e) => { const tg=document.getElementById('tab-game'); if(tg&&!tg.checked) return;
                 if (this.isFinished) return;
                 const k = e.key.toLowerCase();
                 if (k === ' ' || k === 'escape' || k === 'p') {
                     e.preventDefault();
-                    this.togglePause();
+                    this.toggleSettings();
                     return;
                 }
                 if (this.isPaused || !this.isPlaying) return;
@@ -677,7 +677,24 @@ class GameScene extends Phaser.Scene {
         }
     }
 
-    // ---- Pause / Resume ----
+    // ---- Settings toggle (unified pause/settings) ----
+    toggleSettings() {
+        if (this.settingsOverlay) {
+            saveSettings(SETTINGS);
+            this.settingsOverlay.destroy();
+            this.settingsOverlay = null;
+            if (this._settingsWasPlaying) {
+                this.isPaused = false;
+                this.pauseDelta += this.audio.getSongTime() - this.pauseStartedAt;
+                this.audio.startSong(this.pauseStartedAt);
+            }
+            this._settingsWasPlaying = false;
+        } else {
+            this.openSettings();
+        }
+    }
+
+    // ---- Pause / Resume (blur/visibility only) ----
     togglePause(force) {
         if (this.isFinished) return;
         const wantPause = force === true ? true : !this.isPaused;
@@ -998,16 +1015,42 @@ class GameScene extends Phaser.Scene {
         });
     }
 
+    // Make a clickable button label inside the container
+    _settingsBtn(label, x, y, fn) {
+        const t = this.add.text(x, y, label, {
+            fontFamily: 'monospace', fontSize: '11px', color: '#55d6ff',
+            backgroundColor: '#1a2a4a', padding: { x: 5, y: 3 },
+        }).setOrigin(0.5).setInteractive({ useHandCursor: true });
+        t.on('pointerdown', fn);
+        t.on('pointerover', () => t.setColor('#fff'));
+        t.on('pointerout', () => t.setColor('#55d6ff'));
+        return t;
+    }
+
+    // Update the offset/sfx value displays after a change
+    _refreshSettingsUI() {
+        if (!this.settingsOverlay) return;
+        const offTxt = this.settingsOverlay.getByName('offVal');
+        if (offTxt) offTxt.setText(`${SETTINGS.offset|0} ms`);
+        const sfxTxt = this.settingsOverlay.getByName('sfxVal');
+        if (sfxTxt) sfxTxt.setText(`${(SETTINGS.sfx*100)|0}%`);
+        // Update bar lengths
+        const offBar = this.settingsOverlay.getByName('offBar');
+        if (offBar) offBar.clear();
+        const sfxBar = this.settingsOverlay.getByName('sfxBar');
+        if (sfxBar) sfxBar.clear();
+        if (offBar) { offBar.fillStyle(0x55d6ff, 0.6); offBar.fillRect(-145, -25, 290 * Math.min(1, Math.max(0, (SETTINGS.offset+300)/600)), 6); }
+        if (sfxBar) { sfxBar.fillStyle(0xffd700, 0.6); sfxBar.fillRect(-145, 42, 290 * SETTINGS.sfx, 6); }
+    }
+
     openSettings() {
         if (this.settingsOverlay) return;
-        try {
         const { W, H } = G;
         const cx = W / 2, cy = H / 2;
-        const PW = 340, PH = 220;
 
-        // Auto-pause if game is playing (same pattern as togglePause)
-        const _wasPlaying = this.isPlaying && !this.isPaused && !this.isFinished;
-        if (_wasPlaying) {
+        // Auto-pause if game is playing
+        this._settingsWasPlaying = this.isPlaying && !this.isPaused && !this.isFinished;
+        if (this._settingsWasPlaying) {
             this.pauseStartedAt = this.audio.getSongTime();
             this.audio.stopSong();
             this.isPaused = true;
@@ -1015,77 +1058,100 @@ class GameScene extends Phaser.Scene {
 
         this.settingsOverlay = this.add.container(cx, cy).setDepth(70);
 
+        // Background
         const bg = this.add.graphics();
         bg.fillStyle(0x0a0a1a, 0.96);
         bg.lineStyle(2, 0x3b4768, 1);
-        bg.fillRoundedRect(-PW / 2, -PH / 2, PW, PH, 12);
-        bg.strokeRoundedRect(-PW / 2, -PH / 2, PW, PH, 12);
+        bg.fillRoundedRect(-155, -100, 310, 200, 12);
+        bg.strokeRoundedRect(-155, -100, 310, 200, 12);
+        this.settingsOverlay.add(bg);
 
-        const title = this.add.text(0, -PH / 2 + 24, '⚙ Settings', {
-            fontFamily: 'monospace', fontSize: '18px', color: '#ffd700', fontStyle: 'bold',
+        // Title
+        const title = this.add.text(0, -88, '⚙ Settings', {
+            fontFamily: 'monospace', fontSize: '16px', color: '#ffd700', fontStyle: 'bold',
         }).setOrigin(0.5);
+        this.settingsOverlay.add(title);
 
-        // Offset slider
-        const offLabel = this.add.text(-PW / 2 + 20, -PH / 2 + 60, `Offset: ${SETTINGS.offset|0} ms`, {
-            fontFamily: 'monospace', fontSize: '13px', color: '#fff',
+        // ═══ OFFSET ═══
+        const offLabel = this.add.text(-145, -60, 'Offset', {
+            fontFamily: 'monospace', fontSize: '12px', color: '#aaa',
         });
-        const offHint = this.add.text(-PW / 2 + 20, -PH / 2 + 76, 'negative = notes later · positive = notes earlier', {
-            fontFamily: 'monospace', fontSize: '10px', color: '#666',
-        });
-        // Inline HTML range — use ABSOLUTE game coords (not relative to container)
-        const offEl = document.createElement('input');
-        offEl.type = 'range'; offEl.min = -300; offEl.max = 300; offEl.step = 10;
-        offEl.value = SETTINGS.offset;
-        offEl.style.cssText = 'width:280px;margin:4px 0 8px;accent-color:#55d6ff';
-        const wrapper = this.add.dom(cx - PW / 2 + 20, cy - PH / 2 + 100, offEl);
-        offEl.addEventListener('input', () => {
-            SETTINGS.offset = +offEl.value;
-            offLabel.setText(`Offset: ${SETTINGS.offset|0} ms`);
-        });
+        this.settingsOverlay.add(offLabel);
 
-        // SFX slider
-        const sfxLabel = this.add.text(-PW / 2 + 20, -PH / 2 + 140, `SFX volume: ${(SETTINGS.sfx*100)|0}%`, {
-            fontFamily: 'monospace', fontSize: '13px', color: '#fff',
-        });
-        const sfxEl = document.createElement('input');
-        sfxEl.type = 'range'; sfxEl.min = 0; sfxEl.max = 100; sfxEl.step = 5;
-        sfxEl.value = SETTINGS.sfx * 100;
-        sfxEl.style.cssText = 'width:280px;margin:4px 0 8px;accent-color:#55d6ff';
-        this.add.dom(cx - PW / 2 + 20, cy - PH / 2 + 180, sfxEl);
-        sfxEl.addEventListener('input', () => {
-            SETTINGS.sfx = (+sfxEl.value) / 100;
-            sfxLabel.setText(`SFX volume: ${(SETTINGS.sfx*100)|0}%`);
-        });
+        // Progress bar track for offset
+        const offBar = this.add.graphics();
+        offBar.setName('offBar');
+        offBar.fillStyle(0x2a3a5a, 0.8);
+        offBar.fillRect(-145, -25, 290, 6);
+        offBar.fillStyle(0x55d6ff, 0.6);
+        offBar.fillRect(-145, -25, 290 * Math.min(1, Math.max(0, (SETTINGS.offset+300)/600)), 6);
+        this.settingsOverlay.add(offBar);
 
-        // Close button
+        // Value text
+        const offVal = this.add.text(140, -60, `${SETTINGS.offset|0} ms`, {
+            fontFamily: 'monospace', fontSize: '12px', color: '#55d6ff',
+        }).setOrigin(1, 0).setName('offVal');
+        this.settingsOverlay.add(offVal);
+
+        // Offset adjustment buttons
+        const offBtns = [
+            ['-50', () => { SETTINGS.offset = Math.max(-300, SETTINGS.offset - 50); this._refreshSettingsUI(); }, -120],
+            ['-10', () => { SETTINGS.offset = Math.max(-300, SETTINGS.offset - 10); this._refreshSettingsUI(); }, -60],
+            ['+10', () => { SETTINGS.offset = Math.min(300, SETTINGS.offset + 10); this._refreshSettingsUI(); }, 30],
+            ['+50', () => { SETTINGS.offset = Math.min(300, SETTINGS.offset + 50); this._refreshSettingsUI(); }, 80],
+        ];
+        for (const [lbl, fn, x] of offBtns) {
+            this.settingsOverlay.add(this._settingsBtn(lbl, x, -37, fn));
+        }
+        // Reset
+        const resetBtn = this._settingsBtn('⟲', -10, -37, () => { SETTINGS.offset = 0; this._refreshSettingsUI(); });
+        this.settingsOverlay.add(resetBtn);
+
+        // ═══ SFX ═══
+        const sfxLabel = this.add.text(-145, -8, 'SFX volume', {
+            fontFamily: 'monospace', fontSize: '12px', color: '#aaa',
+        });
+        this.settingsOverlay.add(sfxLabel);
+
+        // Progress bar for SFX
+        const sfxBar = this.add.graphics();
+        sfxBar.setName('sfxBar');
+        sfxBar.fillStyle(0x2a3a5a, 0.8);
+        sfxBar.fillRect(-145, 28, 290, 6);
+        sfxBar.fillStyle(0xffd700, 0.6);
+        sfxBar.fillRect(-145, 28, 290 * SETTINGS.sfx, 6);
+        this.settingsOverlay.add(sfxBar);
+
+        const sfxVal = this.add.text(140, -8, `${(SETTINGS.sfx*100)|0}%`, {
+            fontFamily: 'monospace', fontSize: '12px', color: '#ffd700',
+        }).setOrigin(1, 0).setName('sfxVal');
+        this.settingsOverlay.add(sfxVal);
+
+        const sfxBtns = [
+            ['-20', () => { SETTINGS.sfx = Math.max(0, SETTINGS.sfx - 0.2); this._refreshSettingsUI(); }, -120],
+            ['-5',  () => { SETTINGS.sfx = Math.max(0, SETTINGS.sfx - 0.05); this._refreshSettingsUI(); }, -60],
+            ['+5',  () => { SETTINGS.sfx = Math.min(1, SETTINGS.sfx + 0.05); this._refreshSettingsUI(); }, 30],
+            ['+20', () => { SETTINGS.sfx = Math.min(1, SETTINGS.sfx + 0.2); this._refreshSettingsUI(); }, 80],
+        ];
+        for (const [lbl, fn, x] of sfxBtns) {
+            this.settingsOverlay.add(this._settingsBtn(lbl, x, 15, fn));
+        }
+
+        // ═══ CLOSE ═══
         const closeBg = this.add.graphics();
         closeBg.fillStyle(0xff4757, 0.9);
-        closeBg.fillRoundedRect(-40, PH / 2 - 40, 80, 30, 8);
-        const closeText = this.add.text(0, PH / 2 - 25, 'ปิด', {
+        closeBg.fillRoundedRect(-40, 72, 80, 26, 8);
+        this.settingsOverlay.add(closeBg);
+
+        const closeText = this.add.text(0, 85, 'ปิด', {
             fontFamily: 'monospace', fontSize: '13px', color: '#fff', fontStyle: 'bold',
         }).setOrigin(0.5);
-        const closeZone = this.add.zone(0, PH / 2 - 25, 80, 30)
-            .setInteractive({ useHandCursor: true });
-        closeZone.on('pointerdown', () => {
-            saveSettings(SETTINGS);
-            this.settingsOverlay.destroy();
-            this.settingsOverlay = null;
-            if (_wasPlaying) {
-                this.isPaused = false;
-                this.pauseDelta += this.audio.getSongTime() - this.pauseStartedAt;
-                this.audio.startSong(this.pauseStartedAt);
-            }
-        });
+        this.settingsOverlay.add(closeText);
 
-        this.settingsOverlay.add([bg, title, offLabel, offHint, wrapper, sfxLabel, sfxEl, closeBg, closeText, closeZone]);
-        } catch (e) {
-            console.warn('Settings error:', e);
-            if (this.settingsOverlay) { this.settingsOverlay.destroy(); this.settingsOverlay = null; }
-            if (_wasPlaying) {
-                this.isPaused = false;
-                this.audio.startSong(this.pauseStartedAt);
-            }
-        }
+        const closeZone = this.add.zone(0, 85, 80, 30)
+            .setInteractive({ useHandCursor: true });
+        closeZone.on('pointerdown', () => this.toggleSettings());
+        this.settingsOverlay.add(closeZone);
     }
 
     async startGame() {
