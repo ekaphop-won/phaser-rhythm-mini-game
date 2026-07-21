@@ -2,7 +2,7 @@
 <html lang="th">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, maximum-scale=1.0, minimum-scale=1.0">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, maximum-scale=1.0, minimum-scale=1.0, viewport-fit=cover">
 <title>Bunny Tea Parade — Rhythm Game</title>
 <style>
     * { margin: 0; padding: 0; box-sizing: border-box; }
@@ -41,7 +41,7 @@
 <div id="loading"><div class="spinner"></div><p>Loading song...</p></div>
 <div id="game-container"></div>
 
-<script src="https://cdn.jsdelivr.net/npm/phaser@3.80.1/dist/phaser.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/phaser@3.80.1/dist/phaser.min.js" integrity="sha384-Fi7F0CYQBHYa+s2vvYJeiqvOQf3tuZ28vafRGXvMt7ijxNTVf3+eXPkNRIUi9JD2" crossorigin="anonymous"></script>
 <script>
 // ============================================================
 //  BUNNY TEA PARADE — Varied-Pattern + VFX Rhythm Game
@@ -53,13 +53,29 @@
 //  VFX: Phaser 3.80 particle emitter (star/spark explosion)
 // ============================================================
 
-// 104 notes (91 onset beats + 13 chord doubles in hook section)
-// Variable timing — follows actual audio events, not fixed grid
-let BN_L = [0,1,2,3,3,2,1,0,0,2,1,3,0,2,1,3,0,3,1,2,0,3,1,2,1,2,0,3,2,3,0,1,0,2,0,2,0,2,3,1,3,0,1,3,0,1,3,1,0,2,1,0,2,0,1,2,3,2,1,1,0,3,0,1,2,0,1,0,3,2,3,1,0,1,2,3,2,0,1,0,2,1,3,3,1,2,0,0,3,1,2,2,1,0,3,0,1,2,3,3,2,1,0,0];
-let BN_T = [21,672,1344,1973,2677,3338,4021,4629,5344,6005,6677,7317,8010,8682,9322,9973,10645,11328,12000,12682,13333,14005,14656,15317,15989,16661,17333,17973,18688,19328,20010,20661,21333,21952,22634,23296,23989,24661,25322,25962,26624,27317,27317,27989,28650,28650,29312,29973,29973,30645,31306,31306,32000,32640,32640,33301,33973,33973,34656,35285,35285,35946,36650,36650,37344,37973,37973,38634,39296,39296,40010,40618,40618,41301,41952,41952,42613,43296,43296,43946,44586,45301,45930,46613,47285,47957,48629,49290,49952,50645,51274,51957,52608,53280,53962,54602,55232,55946,56618,57269,57930,58624,59264,59946];
+// 149 notes — synced from audio/bunny-tea-parade-adjusted.json
+// Runtime will replace via loadExternalBeatmap() when served over HTTP
+let BN_L = [0,1,2,3,0,3,2,2,0,1,2,0,0,0,2,2,0,1,2,3,0,1,2,3,0,3,2,3,0,3,2,3,2,1,2,3,0,1,2,3,0,1,2,3,0,1,2,3,0,1,2,2,0,1,2,3,0,3,2,1,0,1,0,3,3,1,0,3,0,1,2,3,1,1,2,0,0,2,2,3,0,1,2,1,0,3,2,0,0,2,0,3,0,1,3,3,3,1,2,1,2,1,2,0,0,0,2,2,0,1,2,3,0,3,2,1,0,2,2,0,0,0,2,3,0,1,2,2,0,2,1,3,0,3,2,0,0,1,2,2,0,3,2,3,0,1,2,0,0];
+let BN_T = [21,770,1730,2100,2460,2740,3100,3420,3790,4100,4450,4730,5110,5440,5800,6110,6460,6760,7140,7470,8140,8510,8810,9170,9800,10110,10490,10810,11140,11450,11790,12150,12810,13160,13510,13830,14160,14530,14870,15520,16160,16510,16850,17160,17550,18190,18850,19520,20010,20890,21550,21952,22240,22870,23550,24210,24900,25220,25580,25850,26230,26910,27317,27630,27989,28270,28650,28930,29600,29973,30270,30890,31306,31600,32270,32640,32980,33301,33640,33973,34310,34656,34950,35285,35640,35946,36250,36650,36940,37344,37973,38340,38634,38980,39296,39660,40010,40700,41010,41301,41952,42350,43000,43296,43680,44030,44350,44710,45000,45330,45700,46030,46350,46613,47020,47285,47710,48000,48410,48700,49040,49360,49720,50030,50360,50710,51070,51380,51700,51957,52608,53090,53730,54060,54450,54740,55070,55440,55750,56080,56410,56618,57100,57700,58120,58460,58810,59264,59946];
 
-let TOTAL_NOTES = BN_L.length;
-let SONG_DURATION_MS = 60000;
+// ============================================================
+//  SETTINGS (persisted to localStorage) + HIGH SCORE
+// ============================================================
+const SETTINGS_KEY = 'btp.settings';
+const SCORE_KEY = 'btp.highscore';
+const DEFAULT_SETTINGS = { offset: 0, sfx: 1.0 };
+function loadSettings() {
+    try { return Object.assign({}, DEFAULT_SETTINGS, JSON.parse(localStorage.getItem(SETTINGS_KEY) || '{}')); }
+    catch (e) { return { ...DEFAULT_SETTINGS }; }
+}
+function saveSettings(s) { try { localStorage.setItem(SETTINGS_KEY, JSON.stringify(s)); } catch (e) {} }
+function loadHighScore() {
+    try { return Number(localStorage.getItem(SCORE_KEY) || 0) || 0; }
+    catch (e) { return 0; }
+}
+function saveHighScore(score) { try { localStorage.setItem(SCORE_KEY, String(score|0)); } catch (e) {} }
+let SETTINGS = loadSettings();
+let HIGH_SCORE = loadHighScore();
 
 const G = {
     W: 400,
@@ -67,6 +83,7 @@ const G = {
     LANE_COUNT: 4,
     LANE_COLORS: [0xff4757, 0xffa502, 0x2ed573, 0x1e90ff],
     LANE_COLORS_HEX: ['#ff4757','#ffa502','#2ed573','#1e90ff'],
+    LANE_KEYS: ['d', 'f', 'j', 'k'],
     HIT_ZONE_Y: 620,
     LEAD_TIME: 2000,
     PERFECT_WIN: 80,
@@ -76,12 +93,30 @@ const G = {
     SCORE_GREAT: 200,
     SCORE_GOOD: 100,
     AUDIO_PATH: 'audio/bunny-tea-parade-adjusted.mp3',
+    // Section gates (ms) — single source of truth, mirrors beatmap-editor.html
+    SECTIONS: [
+        { name: 'Intro',     start: 0,     end: 10645 },
+        { name: 'Verse',     start: 10645, end: 23989 },
+        { name: 'Build Up',  start: 23989, end: 27317 },
+        { name: 'Hook',      start: 27317, end: 43946 },
+        { name: 'Outro',     start: 43946, end: 60000 },
+    ],
 };
 
-const BEATMAP_NOTES = [];
-for (let i = 0; i < TOTAL_NOTES; i++) {
-    BEATMAP_NOTES.push({ lane: BN_L[i], time: BN_T[i], spawnTime: BN_T[i] - G.LEAD_TIME });
+// ============================================================
+//  BEATMAP — built from BN_L/BN_T, rebuilt when JSON loaded
+// ============================================================
+let BEATMAP_NOTES = [];
+let TOTAL_NOTES = BN_L.length;
+let SONG_DURATION_MS = 60000;
+function buildBeatmap() {
+    BEATMAP_NOTES.length = 0;
+    TOTAL_NOTES = BN_L.length;
+    for (let i = 0; i < TOTAL_NOTES; i++) {
+        BEATMAP_NOTES.push({ lane: BN_L[i], time: BN_T[i], spawnTime: BN_T[i] - G.LEAD_TIME });
+    }
 }
+buildBeatmap();
 
 // ============================================================
 //  AUDIO MANAGER
@@ -165,6 +200,8 @@ class AudioManager {
 
     playHit(quality) {
         if (!this.ctx) return;
+        const sfx = Math.max(0, Math.min(1, SETTINGS.sfx));
+        if (sfx <= 0.001) return;
         const now = this.ctx.currentTime;
         const bufSize = Math.floor(0.05 * this.ctx.sampleRate);
         const buf = this.ctx.createBuffer(1, bufSize, this.ctx.sampleRate);
@@ -174,7 +211,7 @@ class AudioManager {
         const noise = this.ctx.createBufferSource();
         noise.buffer = buf;
         const gain = this.ctx.createGain();
-        const vol = quality === 'perfect' ? 0.25 : quality === 'great' ? 0.18 : 0.12;
+        const vol = (quality === 'perfect' ? 0.25 : quality === 'great' ? 0.18 : 0.12) * sfx;
         gain.gain.setValueAtTime(vol, now);
         gain.gain.exponentialRampToValueAtTime(0.001, now + 0.04);
         const osc = this.ctx.createOscillator();
@@ -191,6 +228,8 @@ class AudioManager {
 
     playMiss() {
         if (!this.ctx) return;
+        const sfx = Math.max(0, Math.min(1, SETTINGS.sfx));
+        if (sfx <= 0.001) return;
         const now = this.ctx.currentTime;
         const osc = this.ctx.createOscillator();
         const gain = this.ctx.createGain();
@@ -198,7 +237,7 @@ class AudioManager {
         osc.type = 'sawtooth';
         osc.frequency.setValueAtTime(80, now);
         osc.frequency.linearRampToValueAtTime(40, now + 0.15);
-        gain.gain.setValueAtTime(0.1, now);
+        gain.gain.setValueAtTime(0.1 * sfx, now);
         gain.gain.exponentialRampToValueAtTime(0.001, now + 0.15);
         osc.start(now); osc.stop(now + 0.15);
     }
@@ -224,6 +263,9 @@ class GameScene extends Phaser.Scene {
         this.gameTime = 0;
         this.isPlaying = false;
         this.isFinished = false;
+        this.isPaused = false;
+        this.pauseStartedAt = 0;
+        this.pauseDelta = 0;
         this.nextNoteIdx = 0;
         this.activeNoteSprites = [];
         this.lastGameTime = 0;
@@ -238,7 +280,10 @@ class GameScene extends Phaser.Scene {
         this.scoreText = null;
         this.comboText = null;
         this.judgmentText = null;
+        this.highScoreText = null;
+        this.pauseOverlay = null;
         this.audio = null;
+        this._sectionsSeen = {};
     }
 
     create() {
@@ -290,6 +335,11 @@ class GameScene extends Phaser.Scene {
             color: '#ffffff', fontStyle: 'bold',
         }).setDepth(10);
 
+        this.highScoreText = this.add.text(W - 16, 22, `HI ${HIGH_SCORE.toLocaleString()}`, {
+            fontFamily: 'monospace', fontSize: '13px',
+            color: '#888', fontStyle: 'bold',
+        }).setOrigin(1, 0).setDepth(10);
+
         this.comboText = this.add.text(W / 2, 40, '', {
             fontFamily: 'monospace', fontSize: '22px',
             color: '#ffd700',
@@ -313,6 +363,43 @@ class GameScene extends Phaser.Scene {
         this.audio = window.audio;
 
         this.input.on('pointerdown', (pointer) => this.handleTap(pointer));
+
+        // Keyboard support (D F J K = lanes 0-3) + Space=pause
+        this._keyHandlers = {
+            keydown: (e) => {
+                if (this.isFinished) return;
+                const k = e.key.toLowerCase();
+                if (k === ' ' || k === 'escape' || k === 'p') {
+                    e.preventDefault();
+                    this.togglePause();
+                    return;
+                }
+                if (this.isPaused || !this.isPlaying) return;
+                const lane = G.LANE_KEYS.indexOf(k);
+                if (lane >= 0) {
+                    e.preventDefault();
+                    this.handleLaneInput(lane);
+                }
+            },
+            blur: () => { if (this.isPlaying && !this.isFinished) this.togglePause(true); },
+        };
+        window.addEventListener('keydown', this._keyHandlers.keydown);
+        window.addEventListener('blur', this._keyHandlers.blur);
+        this.events.on(Phaser.Scenes.Events.SHUTDOWN, () => {
+            window.removeEventListener('keydown', this._keyHandlers.keydown);
+            window.removeEventListener('blur', this._keyHandlers.blur);
+            if (this._visibilityHandler) {
+                document.removeEventListener('visibilitychange', this._visibilityHandler);
+            }
+        });
+
+        // Auto-pause when tab hidden
+        this._visibilityHandler = () => {
+            if (document.hidden && this.isPlaying && !this.isFinished && !this.isPaused) {
+                this.togglePause(true);
+            }
+        };
+        document.addEventListener('visibilitychange', this._visibilityHandler);
 
         this.showLoadingOverlay();
     }
@@ -410,12 +497,14 @@ class GameScene extends Phaser.Scene {
 
     // ---- Input ----
     handleTap(pointer) {
-        if (!this.isPlaying || this.isFinished) return;
+        if (!this.isPlaying || this.isFinished || this.isPaused) return;
         if (pointer.y < 60) return;
-
         const lane = this.getLaneAtX(pointer.x);
         if (lane < 0) return;
+        this.handleLaneInput(lane);
+    }
 
+    handleLaneInput(lane) {
         let best = null;
         let bestDiff = Infinity;
         for (const n of this.activeNoteSprites) {
@@ -558,38 +647,71 @@ class GameScene extends Phaser.Scene {
         });
     }
 
+    // ---- Pause / Resume ----
+    togglePause(force) {
+        if (this.isFinished) return;
+        const wantPause = force === true ? true : !this.isPaused;
+        if (wantPause === this.isPaused) return;
+        this.isPaused = wantPause;
+        if (this.isPaused) {
+            this.pauseStartedAt = this.audio.getSongTime();
+            this.audio.stopSong();
+            this.showPauseOverlay();
+        } else {
+            this.pauseDelta += this.audio.getSongTime() - this.pauseStartedAt;
+            this.audio.startSong(this.pauseStartedAt);
+            this.hidePauseOverlay();
+        }
+    }
+
+    showPauseOverlay() {
+        if (this.pauseOverlay) return;
+        const { W, H } = G;
+        this.pauseOverlay = this.add.container(W / 2, H / 2).setDepth(60);
+        const bg = this.add.graphics();
+        bg.fillStyle(0x000000, 0.7);
+        bg.fillRect(-W / 2, -H / 2, W, H);
+        const t1 = this.add.text(0, -20, '⏸ Paused', {
+            fontFamily: 'monospace', fontSize: '36px', color: '#ffd700', fontStyle: 'bold',
+        }).setOrigin(0.5);
+        const t2 = this.add.text(0, 30, 'Space / Esc / P · tap · blur → resume', {
+            fontFamily: 'monospace', fontSize: '13px', color: '#cccccc',
+        }).setOrigin(0.5);
+        this.pauseOverlay.add([bg, t1, t2]);
+    }
+
+    hidePauseOverlay() {
+        if (this.pauseOverlay) { this.pauseOverlay.destroy(); this.pauseOverlay = null; }
+    }
+
     // ---- Main update ----
     update(time, delta) {
         if (!this.isPlaying) return;
+        if (this.isPaused) return;
 
-        this.gameTime = this.audio.getSongTime() * 1000;
+        // offset calibration: positive = notes come earlier (advance gameTime)
+        const songMs = this.audio.getSongTime() * 1000;
+        this.gameTime = songMs - this.pauseDelta + SETTINGS.offset;
 
         if (this.gameTime < this.lastGameTime && this.lastGameTime > 500) {
             this.gameTime = this.lastGameTime + delta;
         }
 
-        // Section detection for banners
-        if (this.gameTime >= 100 && this.gameTime < 100 + delta * 2 && !this._introSeen) {
-            this._introSeen = true;
-        }
-        if (this.gameTime >= 10645 && this.gameTime < 10645 + delta * 2 && !this._verseSeen) {
-            this._verseSeen = true;
-            this.showSectionBanner('🎵 Verse');
-        }
-        if (this.gameTime >= 23989 && this.gameTime < 23989 + delta * 2 && !this._preHookSeen) {
-            this._preHookSeen = true;
-            this.showSectionBanner('⚡ Build Up');
-        }
-        if (this.gameTime >= 27317 && this.gameTime < 27317 + delta * 2 && !this._hookSeen) {
-            this._hookSeen = true;
-            this.showSectionBanner('🔥 HOOK!');
-            // Flash hit zone
-            this.drawHitZone(1);
-            this.cameras.main.flash(200, 255, 215, 0, false, null, null, 0.1);
-        }
-        if (this.gameTime >= 43946 && this.gameTime < 43946 + delta * 2 && !this._outroSeen) {
-            this._outroSeen = true;
-            this.showSectionBanner('🌅 Outro');
+        // Section detection for banners — data-driven from G.SECTIONS
+        const SLIDE_MS = Math.max(50, delta * 2);
+        for (let i = 0; i < G.SECTIONS.length; i++) {
+            const sec = G.SECTIONS[i];
+            if (sec.start <= 0) continue; // skip Intro (start=0) — handled by start screen
+            if (this._sectionsSeen[sec.name]) continue;
+            if (this.gameTime >= sec.start && this.gameTime < sec.start + SLIDE_MS) {
+                this._sectionsSeen[sec.name] = true;
+                const icon = sec.name === 'Verse' ? '🎵' : sec.name === 'Build Up' ? '⚡' : sec.name === 'Hook' ? '🔥' : sec.name === 'Outro' ? '🌅' : '🎬';
+                this.showSectionBanner(`${icon} ${sec.name}`);
+                if (sec.name === 'Hook') {
+                    this.drawHitZone(1);
+                    this.cameras.main.flash(200, 255, 215, 0, false, null, null, 0.1);
+                }
+            }
         }
 
         // Spawn notes
@@ -651,6 +773,14 @@ class GameScene extends Phaser.Scene {
         this.isPlaying = false;
         this.isFinished = true;
         this.audio.stopSong();
+        this.hidePauseOverlay();
+
+        const isNewHigh = this.score > HIGH_SCORE;
+        if (isNewHigh && this.score > 0) {
+            HIGH_SCORE = this.score;
+            saveHighScore(HIGH_SCORE);
+            if (this.highScoreText) this.highScoreText.setText(`HI ${HIGH_SCORE.toLocaleString()}`);
+        }
 
         for (const n of this.activeNoteSprites) {
             if (n.sprite && n.sprite.gfx && n.sprite.gfx.active) {
@@ -703,6 +833,19 @@ class GameScene extends Phaser.Scene {
 
         yPos += 35;
 
+        // New high score badge
+        if (isNewHigh && this.score > 0) {
+            this.add.text(cx, yPos, '🏆 NEW HIGH SCORE!', {
+                fontFamily: 'monospace', fontSize: '14px', color: '#ffd700', fontStyle: 'bold',
+            }).setOrigin(0.5).setDepth(51);
+            yPos += 26;
+        }
+        // Best score
+        this.add.text(cx, yPos, `Best: ${HIGH_SCORE.toLocaleString()}`, {
+            fontFamily: 'monospace', fontSize: '12px', color: '#888',
+        }).setOrigin(0.5).setDepth(51);
+        yPos += 28;
+
         const btnBg = this.add.graphics().setDepth(51);
         const btnX = cx - 90, btnY = yPos, btnW = 180, btnH = 50;
         btnBg.fillStyle(0xffd700, 0.9);
@@ -713,7 +856,11 @@ class GameScene extends Phaser.Scene {
 
         const rz = this.add.zone(cx, btnY + btnH / 2, btnW, btnH)
             .setInteractive({ useHandCursor: true }).setDepth(53);
-        rz.on('pointerdown', () => { this.scene.restart(); });
+        rz.on('pointerdown', () => {
+            // Bug 3: stop audio source before restart to prevent overlap
+            this.audio.stopSong();
+            this.scene.restart();
+        });
         rz.on('pointerover', () => { btnBg.clear(); btnBg.fillStyle(0xffed4a, 1); btnBg.fillRoundedRect(btnX, btnY, btnW, btnH, 12); });
         rz.on('pointerout', () => { btnBg.clear(); btnBg.fillStyle(0xffd700, 0.9); btnBg.fillRoundedRect(btnX, btnY, btnW, btnH, 12); });
     }
@@ -738,6 +885,8 @@ class GameScene extends Phaser.Scene {
             document.getElementById('loading').classList.add('hidden');
             this.showStartScreen();
         } catch (e) {
+            // Bug 4 fix: clear cached rejected promise so retry can re-fetch
+            this.audio.loadPromise = null;
             this.loadingText.setText('❌ Failed to load audio\nTap to retry');
             this.loadingText.setColor('#ff4757');
             this.input.once('pointerdown', () => this.loadAudio());
@@ -750,26 +899,57 @@ class GameScene extends Phaser.Scene {
         this.overlay.fillStyle(0x000000, 0.7);
         this.overlay.fillRect(0, 0, W, H);
 
-        this.startTitle = this.add.text(W / 2, H / 2 - 60, '🐰 Bunny Tea Parade', {
+        this.startTitle = this.add.text(W / 2, H / 2 - 100, '🐰 Bunny Tea Parade', {
             fontFamily: 'monospace', fontSize: '28px',
             color: '#ffffff', fontStyle: 'bold',
         }).setOrigin(0.5).setDepth(21);
 
-        this.startSubtitle = this.add.text(W / 2, H / 2 - 20, '🎯 Onset-Sync + Varied Patterns', {
+        this.startSubtitle = this.add.text(W / 2, H / 2 - 60, '🎯 Onset-Sync + Varied Patterns', {
             fontFamily: 'monospace', fontSize: '16px',
             color: '#ffd700',
         }).setOrigin(0.5).setDepth(21);
 
-        this.startTapText = this.add.text(W / 2, H / 2 + 25, '👆 แตะเพื่อเริ่ม!', {
+        // Bug 5 fix: show Intro section badge
+        this.startIntro = this.add.text(W / 2, H / 2 - 28, '🎬 Intro', {
+            fontFamily: 'monospace', fontSize: '14px',
+            color: '#9beaff',
+        }).setOrigin(0.5).setDepth(21);
+
+        this.startTapText = this.add.text(W / 2, H / 2 + 12, '👆 แตะเพื่อเริ่ม!', {
             fontFamily: 'monospace', fontSize: '16px',
             color: '#cccccc',
         }).setOrigin(0.5).setDepth(21);
 
-        this.startInfo = this.add.text(W / 2, H / 2 + 65,
+        this.startInfo = this.add.text(W / 2, H / 2 + 52,
             `${this.totalNotes} โน๊ต • Hook มี ♫ Chords • 60 วิ`, {
             fontFamily: 'monospace', fontSize: '12px',
             color: '#666666',
         }).setOrigin(0.5).setDepth(21);
+
+        this.startControls = this.add.text(W / 2, H / 2 + 80,
+            'D F J K · Space=pause · ⛉=settings', {
+            fontFamily: 'monospace', fontSize: '11px',
+            color: '#555',
+        }).setOrigin(0.5).setDepth(21);
+
+        this.startBest = this.add.text(W / 2, H / 2 + 105,
+            HIGH_SCORE > 0 ? `Best: ${HIGH_SCORE.toLocaleString()}` : '', {
+            fontFamily: 'monospace', fontSize: '12px',
+            color: '#888', fontStyle: 'bold',
+        }).setOrigin(0.5).setDepth(21);
+
+        // Settings button (top-right)
+        const sBg = this.add.graphics().setDepth(22);
+        sBg.fillStyle(0x1a1a3a, 0.85);
+        sBg.lineStyle(1, 0x3b4768, 1);
+        sBg.fillRoundedRect(W - 50, 12, 38, 38, 8);
+        sBg.strokeRoundedRect(W - 50, 12, 38, 38, 8);
+        const sIcon = this.add.text(W - 31, 32, '⛉', {
+            fontFamily: 'monospace', fontSize: '20px', color: '#55d6ff',
+        }).setOrigin(0.5).setDepth(23);
+        const sZone = this.add.zone(W - 31, 31, 38, 38)
+            .setInteractive({ useHandCursor: true }).setDepth(24);
+        sZone.on('pointerdown', () => this.openSettings());
 
         this.tweens.add({
             targets: this.startTapText,
@@ -779,7 +959,78 @@ class GameScene extends Phaser.Scene {
             duration: 600,
         });
 
-        this.input.once('pointerdown', () => this.startGame());
+        this.input.once('pointerdown', (pointer) => {
+            // Don't trigger start if user clicked settings button
+            if (pointer.x > W - 50 && pointer.x < W - 12 && pointer.y < 50) return;
+            this.startGame();
+        });
+    }
+
+    openSettings() {
+        if (this.settingsOverlay) return;
+        const { W, H } = G;
+        const cx = W / 2, cy = H / 2;
+        const PW = 340, PH = 220;
+        this.settingsOverlay = this.add.container(cx, cy).setDepth(70);
+
+        const bg = this.add.graphics();
+        bg.fillStyle(0x0a0a1a, 0.96);
+        bg.lineStyle(2, 0x3b4768, 1);
+        bg.fillRoundedRect(-PW / 2, -PH / 2, PW, PH, 12);
+        bg.strokeRoundedRect(-PW / 2, -PH / 2, PW, PH, 12);
+
+        const title = this.add.text(0, -PH / 2 + 24, '⚙ Settings', {
+            fontFamily: 'monospace', fontSize: '18px', color: '#ffd700', fontStyle: 'bold',
+        }).setOrigin(0.5);
+
+        // Offset slider
+        const offLabel = this.add.text(-PW / 2 + 20, -PH / 2 + 60, `Offset: ${SETTINGS.offset|0} ms`, {
+            fontFamily: 'monospace', fontSize: '13px', color: '#fff',
+        });
+        const offHint = this.add.text(-PW / 2 + 20, -PH / 2 + 76, 'negative = notes later · positive = notes earlier', {
+            fontFamily: 'monospace', fontSize: '10px', color: '#666',
+        });
+        // Inline HTML range (Phaser doesn't have native slider)
+        const offEl = document.createElement('input');
+        offEl.type = 'range'; offEl.min = -300; offEl.max = 300; offEl.step = 10;
+        offEl.value = SETTINGS.offset;
+        offEl.style.cssText = 'width:280px;margin:4px 0 8px;accent-color:#55d6ff';
+        const wrapper = this.add.dom(-PW / 2 + 20, -PH / 2 + 100, offEl);
+        offEl.addEventListener('input', () => {
+            SETTINGS.offset = +offEl.value;
+            offLabel.setText(`Offset: ${SETTINGS.offset|0} ms`);
+        });
+
+        // SFX slider
+        const sfxLabel = this.add.text(-PW / 2 + 20, -PH / 2 + 140, `SFX volume: ${(SETTINGS.sfx*100)|0}%`, {
+            fontFamily: 'monospace', fontSize: '13px', color: '#fff',
+        });
+        const sfxEl = document.createElement('input');
+        sfxEl.type = 'range'; sfxEl.min = 0; sfxEl.max = 100; sfxEl.step = 5;
+        sfxEl.value = SETTINGS.sfx * 100;
+        sfxEl.style.cssText = 'width:280px;margin:4px 0 8px;accent-color:#55d6ff';
+        this.add.dom(-PW / 2 + 20, -PH / 2 + 180, sfxEl);
+        sfxEl.addEventListener('input', () => {
+            SETTINGS.sfx = (+sfxEl.value) / 100;
+            sfxLabel.setText(`SFX volume: ${(SETTINGS.sfx*100)|0}%`);
+        });
+
+        // Close button
+        const closeBg = this.add.graphics();
+        closeBg.fillStyle(0xff4757, 0.9);
+        closeBg.fillRoundedRect(-40, PH / 2 - 40, 80, 30, 8);
+        const closeText = this.add.text(0, PH / 2 - 25, 'ปิด', {
+            fontFamily: 'monospace', fontSize: '13px', color: '#fff', fontStyle: 'bold',
+        }).setOrigin(0.5);
+        const closeZone = this.add.zone(0, PH / 2 - 25, 80, 30)
+            .setInteractive({ useHandCursor: true });
+        closeZone.on('pointerdown', () => {
+            saveSettings(SETTINGS);
+            this.settingsOverlay.destroy();
+            this.settingsOverlay = null;
+        });
+
+        this.settingsOverlay.add([bg, title, offLabel, offHint, wrapper, sfxLabel, sfxEl, closeBg, closeText, closeZone]);
     }
 
     async startGame() {
@@ -788,12 +1039,18 @@ class GameScene extends Phaser.Scene {
         if (this.startSubtitle) this.startSubtitle.destroy();
         if (this.startTapText) this.startTapText.destroy();
         if (this.startInfo) this.startInfo.destroy();
+        if (this.startControls) this.startControls.destroy();
+        if (this.startBest) this.startBest.destroy();
+        if (this.startIntro) this.startIntro.destroy();
 
         await this.audio.startSong(0);
         this.isPlaying = true;
+        this.isPaused = false;
+        this.pauseDelta = 0;
         this.nextNoteIdx = 0;
         this.gameTime = 0;
         this.lastGameTime = 0;
+        this._sectionsSeen = {};
     }
 }
 
@@ -809,10 +1066,12 @@ const config = {
     backgroundColor: '#0a0a1a',
     input: { activePointers: 3 },
     scale: { mode: Phaser.Scale.FIT, autoCenter: Phaser.Scale.CENTER_BOTH },
+    resolution: Math.max(1, window.devicePixelRatio || 1),
+    render: { pixelArt: false, antialias: true },
     scene: [GameScene],
 };
 
-async function loadExternalBeatmap(){if(location.protocol==='file:')return false;const jsonPath=G.AUDIO_PATH.replace(/\.[^.]+$/i,'.json');const response=await fetch(jsonPath+'?v='+Date.now());if(!response.ok)throw new Error('beatmap JSON HTTP '+response.status);const data=await response.json();if(!Array.isArray(data.notes)||!data.notes.length)throw new Error('beatmap JSON ไม่มี notes');const notes=data.notes.map(note=>({lane:Math.max(0,Math.min(3,Number(note.lane)||0)),time:Math.max(0,Number(note.time)||0)})).sort((a,b)=>a.time-b.time);BN_L=notes.map(note=>note.lane);BN_T=notes.map(note=>note.time);TOTAL_NOTES=BN_L.length;if(Number.isFinite(Number(data.duration)))SONG_DURATION_MS=Number(data.duration);console.info('Loaded external beatmap:',jsonPath,TOTAL_NOTES+' notes')}
+async function loadExternalBeatmap(){if(location.protocol==='file:')return false;const jsonPath=G.AUDIO_PATH.replace(/\.[^.]+$/i,'.json');const response=await fetch(jsonPath+'?v='+Date.now());if(!response.ok)throw new Error('beatmap JSON HTTP '+response.status);const data=await response.json();if(!Array.isArray(data.notes)||!data.notes.length)throw new Error('beatmap JSON ไม่มี notes');const notes=data.notes.map(note=>({lane:Math.max(0,Math.min(3,Number(note.lane)||0)),time:Math.max(0,Number(note.time)||0)})).sort((a,b)=>a.time-b.time);BN_L=notes.map(note=>note.lane);BN_T=notes.map(note=>note.time);TOTAL_NOTES=BN_L.length;if(Number.isFinite(Number(data.duration)))SONG_DURATION_MS=Number(data.duration);buildBeatmap();console.info('Loaded external beatmap:',jsonPath,TOTAL_NOTES+' notes,',BEATMAP_NOTES.length+' rebuilt')}
 async function boot(){try{await loadExternalBeatmap()}catch(error){console.warn('External beatmap unavailable; using embedded fallback.',error.message)}new Phaser.Game(config)}
 boot();
 </script>
