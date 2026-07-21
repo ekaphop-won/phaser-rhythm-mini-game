@@ -1000,6 +1000,7 @@ class GameScene extends Phaser.Scene {
 
     openSettings() {
         if (this.settingsOverlay) return;
+        try {
         const { W, H } = G;
         const cx = W / 2, cy = H / 2;
         const PW = 340, PH = 220;
@@ -1063,6 +1064,10 @@ class GameScene extends Phaser.Scene {
         });
 
         this.settingsOverlay.add([bg, title, offLabel, offHint, wrapper, sfxLabel, sfxEl, closeBg, closeText, closeZone]);
+        } catch (e) {
+            console.warn('Settings error:', e);
+            if (this.settingsOverlay) { this.settingsOverlay.destroy(); this.settingsOverlay = null; }
+        }
     }
 
     async startGame() {
@@ -1100,6 +1105,7 @@ const config = {
     scale: { mode: Phaser.Scale.FIT, autoCenter: Phaser.Scale.CENTER_BOTH },
     resolution: Math.max(1, window.devicePixelRatio || 1),
     render: { pixelArt: false, antialias: true },
+    dom: { createContainer: true },
     scene: [GameScene],
 };
 
