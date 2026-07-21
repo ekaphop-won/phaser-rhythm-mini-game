@@ -391,6 +391,11 @@ class GameScene extends Phaser.Scene {
             if (this._visibilityHandler) {
                 document.removeEventListener('visibilitychange', this._visibilityHandler);
             }
+            // Cleanup texture memory leak: remove auto-generated UUID textures
+            // created by Phaser for add.graphics() and particle emitter frames.
+            // Fixed keys ('spark', 'glow') are recreated by generateParticleTextures
+            // on next scene boot, so we keep them.
+            this._cleanupAutoTextures();
         });
 
         // Auto-pause when tab hidden
@@ -647,6 +652,21 @@ class GameScene extends Phaser.Scene {
         });
     }
 
+    // ---- Texture cleanup (prevent UUID texture memory leak) ----
+    // Phaser 3.80's add.graphics() and particle emitters auto-register internal
+    // textures with UUID keys in Phaser.Textures.List. These are NOT removed when
+    // the owning GameObject is destroyed, so scene.restart() leaks ~12 entries per cycle.
+    // Fixed keys (created by generateParticleTextures) are explicitly preserved.
+    _cleanupAutoTextures() {
+        const t = this.textures;
+        if (!t || !t.removeKey) return;
+        const uuidRe = /^[0-9a-f]{8}-/;
+        const keys = Object.keys(t.list).filter(k => uuidRe.test(k));
+        for (const k of keys) {
+            try { t.removeKey(k); } catch (e) { /* ignore */ }
+        }
+    }
+
     // ---- Pause / Resume ----
     togglePause(force) {
         if (this.isFinished) return;
@@ -859,6 +879,8 @@ class GameScene extends Phaser.Scene {
         rz.on('pointerdown', () => {
             // Bug 3: stop audio source before restart to prevent overlap
             this.audio.stopSong();
+            // Texture leak fix: remove auto-generated UUID textures before restart
+            this._cleanupAutoTextures();
             this.scene.restart();
         });
         rz.on('pointerover', () => { btnBg.clear(); btnBg.fillStyle(0xffed4a, 1); btnBg.fillRoundedRect(btnX, btnY, btnW, btnH, 12); });
@@ -1072,7 +1094,7 @@ const config = {
 };
 
 async function loadExternalBeatmap(){if(location.protocol==='file:')return false;const jsonPath=G.AUDIO_PATH.replace(/\.[^.]+$/i,'.json');const response=await fetch(jsonPath+'?v='+Date.now());if(!response.ok)throw new Error('beatmap JSON HTTP '+response.status);const data=await response.json();if(!Array.isArray(data.notes)||!data.notes.length)throw new Error('beatmap JSON ไม่มี notes');const notes=data.notes.map(note=>({lane:Math.max(0,Math.min(3,Number(note.lane)||0)),time:Math.max(0,Number(note.time)||0)})).sort((a,b)=>a.time-b.time);BN_L=notes.map(note=>note.lane);BN_T=notes.map(note=>note.time);TOTAL_NOTES=BN_L.length;if(Number.isFinite(Number(data.duration)))SONG_DURATION_MS=Number(data.duration);buildBeatmap();console.info('Loaded external beatmap:',jsonPath,TOTAL_NOTES+' notes,',BEATMAP_NOTES.length+' rebuilt')}
-async function boot(){try{await loadExternalBeatmap()}catch(error){console.warn('External beatmap unavailable; using embedded fallback.',error.message)}new Phaser.Game(config)}
+async function boot(){try{await loadExternalBeatmap()}catch(error){console.warn('External beatmap unavailable; using embedded fallback.',error.message)}const __game=new Phaser.Game(config);return __game}
 boot();
 </script>
 </body>
