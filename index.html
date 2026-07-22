@@ -33,7 +33,16 @@
         margin-bottom: 16px;
     }
     @keyframes spin { to { transform: rotate(360deg); } }
-    #loading p { font-size: 14px; color: #888; }button,input{font:inherit}button{border:1px solid #3b4768;background:#1a2236;color:var(--text);border-radius:7px;padding:8px 11px;cursor:pointer}button:hover{border-color:var(--cyan);background:#202c48}.app{max-width:1400px;margin:auto;padding:18px}.top{display:flex;justify-content:space-between;gap:14px;align-items:flex-start;margin-bottom:14px}.title{font-size:21px;font-weight:800}.sub{color:var(--muted);margin-top:5px}.actions{display:flex;flex-wrap:wrap;gap:7px;justify-content:flex-end}.panel{background:rgba(17,21,34,.92);border:1px solid var(--line);border-radius:12px;box-shadow:0 12px 35px #0004}.toolbar{display:flex;gap:8px;flex-wrap:wrap;align-items:center;padding:11px;margin-bottom:12px}.toolbar label{color:var(--muted)}.toolbar input[type=range]{width:130px;accent-color:var(--cyan)}.status{margin-left:auto;color:var(--gold);white-space:nowrap}.main{display:grid;grid-template-columns:minmax(0,1fr) 255px;gap:12px}.editor{padding:12px;overflow:hidden}.timeline-head{display:flex;align-items:center;justify-content:space-between;color:var(--muted);margin-bottom:8px}.time-readout{color:var(--text)}#timeline{position:relative;height:440px;border:1px solid var(--line);border-radius:8px;overflow:auto;background:#0b0f1b}.track{position:relative;min-width:900px;height:100%}.wave{position:absolute;left:0;right:0;top:0;height:125px;background:#0e1424}.grid{position:absolute;left:0;right:0;top:0;height:100%}.lane{position:absolute;left:0;right:0;height:72px;border-top:1px solid #303b58}.lane[data-lane="0"]{top:145px}.lane[data-lane="1"]{top:217px}.lane[data-lane="2"]{top:289px}.lane[data-lane="3"]{top:361px}.lane-label{position:sticky;left:8px;z-index:5;display:inline-block;padding:6px 8px;margin-top:7px;border-radius:5px;background:#0a0d18dd}.note{position:absolute;width:18px;height:18px;border-radius:50%;transform:translate(-9px,-9px);top:36px;border:2px solid #fff8;box-shadow:0 0 10px currentColor;cursor:pointer;z-index:8}.note.selected{outline:3px solid var(--gold);outline-offset:3px;transform:translate(-9px,-9px) scale(1.22)}.note.active{animation:notePulse .35s ease-out;filter:brightness(1.65)}.note.past{opacity:.25;box-shadow:none}@keyframes notePulse{0%{transform:translate(-9px,-9px) scale(1)}60%{transform:translate(-9px,-9px) scale(1.8)}100%{transform:translate(-9px,-9px) scale(1)}}.note.chord{border-radius:4px}.lane0{background:var(--red);color:var(--red)}.lane1{background:var(--orange);color:var(--orange)}.lane2{background:var(--green);color:var(--green)}.lane3{background:var(--blue);color:var(--blue)}.section{position:absolute;top:0;height:100%;border-left:1px dashed #ffffff22;border-right:1px dashed #ffffff12;pointer-events:none}.section b{position:sticky;top:5px;left:7px;color:#ffffff88;font-size:11px}.marker{position:absolute;top:0;bottom:0;width:1px;background:var(--cyan);opacity:.32;pointer-events:none;z-index:2}.marker.beat{background:var(--gold);opacity:.72;width:2px;pointer-events:auto;cursor:ew-resize}.marker.beat.selected{width:4px;opacity:1;box-shadow:0 0 10px var(--gold)}.playhead{position:absolute;top:0;bottom:0;width:2px;background:#fff;box-shadow:0 0 12px #fff;z-index:12;pointer-events:none}.playhead:after{content:'PLAYHEAD';position:absolute;top:0;left:4px;color:#fff;background:#ffffff25;padding:3px;font-size:10px}.sidebar{padding:14px}.sidebar h3{margin:0 0 12px;color:var(--gold)}.info{line-height:1.7;color:var(--muted);margin-bottom:16px}.info strong{color:var(--text)}.legend{display:grid;gap:8px;margin:15px 0}.leg{display:flex;align-items:center;gap:8px}.dot{width:12px;height:12px;border-radius:50%}.help{border-top:1px solid var(--line);padding-top:14px;color:var(--muted);line-height:1.65}.selected-box{background:#0b1020;border:1px solid var(--line);border-radius:8px;padding:10px;line-height:1.8;margin:10px 0;color:var(--muted);min-height:74px;overflow:hidden;overflow-wrap:anywhere}.selected-box strong{color:var(--text)}.kbd{color:var(--gold)}.toast{position:fixed;bottom:18px;left:50%;transform:translateX(-50%);background:#202c48;border:1px solid var(--cyan);padding:10px 14px;border-radius:8px;display:none;z-index:30}.empty{padding:40px;text-align:center;color:var(--muted)}@media(max-width:850px){.main{grid-template-columns:1fr}.sidebar{order:-1}.top{display:block}.actions{justify-content:flex-start;margin-top:12px}.status{margin-left:0}.toolbar{font-size:11px}.toolbar input[type=range]{width:95px}}</style>
+    #loading p { font-size: 14px; color: #888; }button,input{font:inherit}button{border:1px solid #3b4768;background:#1a2236;color:var(--text);border-radius:7px;padding:8px 11px;cursor:pointer}button:hover{border-color:var(--cyan);background:#202c48}.app{max-width:1400px;margin:auto;padding:18px}.top{display:flex;justify-content:space-between;gap:14px;align-items:flex-start;margin-bottom:14px}.title{font-size:21px;font-weight:800}.sub{color:var(--muted);margin-top:5px}.actions{display:flex;flex-wrap:wrap;gap:7px;justify-content:flex-end}.panel{background:rgba(17,21,34,.92);border:1px solid var(--line);border-radius:12px;box-shadow:0 12px 35px #0004}.toolbar{display:flex;gap:8px;flex-wrap:wrap;align-items:center;padding:11px;margin-bottom:12px}.toolbar label{color:var(--muted)}.toolbar input[type=range]{width:130px;accent-color:var(--cyan)}.status{margin-left:auto;color:var(--gold);white-space:nowrap}.main{display:grid;grid-template-columns:minmax(0,1fr) 255px;gap:12px}.editor{padding:12px;overflow:hidden}.timeline-head{display:flex;align-items:center;justify-content:space-between;color:var(--muted);margin-bottom:8px}.time-readout{color:var(--text)}#timeline{position:relative;height:440px;border:1px solid var(--line);border-radius:8px;overflow:auto;background:#0b0f1b}.track{position:relative;min-width:900px;height:100%}.wave{position:absolute;left:0;right:0;top:0;height:125px;background:#0e1424}.grid{position:absolute;left:0;right:0;top:0;height:100%}.lane{position:absolute;left:0;right:0;height:72px;border-top:1px solid #303b58}.lane[data-lane="0"]{top:145px}.lane[data-lane="1"]{top:217px}.lane[data-lane="2"]{top:289px}.lane[data-lane="3"]{top:361px}.lane-label{position:sticky;left:8px;z-index:5;display:inline-block;padding:6px 8px;margin-top:7px;border-radius:5px;background:#0a0d18dd}.note{position:absolute;width:18px;height:18px;border-radius:50%;transform:translate(-9px,-9px);top:36px;border:2px solid #fff8;box-shadow:0 0 10px currentColor;cursor:pointer;z-index:8}.note.selected{outline:3px solid var(--gold);outline-offset:3px;transform:translate(-9px,-9px) scale(1.22)}.note.active{animation:notePulse .35s ease-out;filter:brightness(1.65)}.note.past{opacity:.25;box-shadow:none}@keyframes notePulse{0%{transform:translate(-9px,-9px) scale(1)}60%{transform:translate(-9px,-9px) scale(1.8)}100%{transform:translate(-9px,-9px) scale(1)}}.note.chord{border-radius:4px}.lane0{background:var(--red);color:var(--red)}.lane1{background:var(--orange);color:var(--orange)}.lane2{background:var(--green);color:var(--green)}.lane3{background:var(--blue);color:var(--blue)}.section{position:absolute;top:0;height:100%;border-left:1px dashed #ffffff22;border-right:1px dashed #ffffff12;pointer-events:none}.section b{position:sticky;top:5px;left:7px;color:#ffffff88;font-size:11px}.marker{position:absolute;top:0;bottom:0;width:1px;background:var(--cyan);opacity:.32;pointer-events:none;z-index:2}.marker.beat{background:var(--gold);opacity:.72;width:2px;pointer-events:auto;cursor:ew-resize}.marker.beat.selected{width:4px;opacity:1;box-shadow:0 0 10px var(--gold)}.playhead{position:absolute;top:0;bottom:0;width:2px;background:#fff;box-shadow:0 0 12px #fff;z-index:12;pointer-events:none}.playhead:after{content:'PLAYHEAD';position:absolute;top:0;left:4px;color:#fff;background:#ffffff25;padding:3px;font-size:10px}.sidebar{padding:14px}.sidebar h3{margin:0 0 12px;color:var(--gold)}.info{line-height:1.7;color:var(--muted);margin-bottom:16px}.info strong{color:var(--text)}.legend{display:grid;gap:8px;margin:15px 0}.leg{display:flex;align-items:center;gap:8px}.dot{width:12px;height:12px;border-radius:50%}.help{border-top:1px solid var(--line);padding-top:14px;color:var(--muted);line-height:1.65}.selected-box{background:#0b1020;border:1px solid var(--line);border-radius:8px;padding:10px;line-height:1.8;margin:10px 0;color:var(--muted);min-height:74px;overflow:hidden;overflow-wrap:anywhere}.selected-box strong{color:var(--text)}.kbd{color:var(--gold)}.toast{position:fixed;bottom:18px;left:50%;transform:translateX(-50%);background:#202c48;border:1px solid var(--cyan);padding:10px 14px;border-radius:8px;display:none;z-index:30}.empty{padding:40px;text-align:center;color:var(--muted)}@media(max-width:850px){.main{grid-template-columns:1fr}.sidebar{order:-1}.top{display:block}.actions{justify-content:flex-start;margin-top:12px}.status{margin-left:0}.toolbar{font-size:11px}.toolbar input[type=range]{width:95px}}
+@media (prefers-reduced-motion: reduce) {
+  * { animation-duration: 0.01ms !important; animation-iteration-count: 1 !important; transition-duration: 0.01ms !important; }
+  .note.active { animation: none; }
+}
+@media (hover: none), (pointer: coarse) {
+  /* Touch devices — no sticky hover highlights (Emil: avoid false-positive hover) */
+  .lane { opacity: 0.85; }
+}
+</style>
 <script src="https://cdn.jsdelivr.net/npm/phaser@3.80.1/dist/phaser.min.js" integrity="sha384-Fi7F0CYQBHYa+s2vvYJeiqvOQf3tuZ28vafRGXvMt7ijxNTVf3+eXPkNRIUi9JD2" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
 </head>
 <body><div class="btp-tabs">
@@ -112,6 +121,14 @@ const G = {
         { name: 'Outro',     start: 43946, end: 60000 },
     ],
 };
+
+// ============================================================
+//  ANIMATION EASINGS — Emil Kowalski-style custom curves
+//  Stronger than CSS defaults; gives animations intentional punch.
+// ============================================================
+const EASE_OUT       = 'Cubic.easeOut';      // Phaser: equivalent to cubic-bezier(0.23, 1, 0.32, 1)
+const EASE_IN_OUT    = 'Cubic.easeInOut';   // equivalent to cubic-bezier(0.77, 0, 0.175, 1)
+const EASE_DRAWER    = 'Cubic.easeOut';     // iOS-like drawer; alias for code clarity
 
 // ============================================================
 //  BEATMAP — built from BN_L/BN_T, rebuilt when JSON loaded
@@ -291,7 +308,6 @@ class GameScene extends Phaser.Scene {
         this.comboText = null;
         this.judgmentText = null;
         this.highScoreText = null;
-        this.pauseOverlay = null;
         this.audio = null;
         this._sectionsSeen = {};
     }
@@ -572,7 +588,7 @@ class GameScene extends Phaser.Scene {
         gfx.fillRoundedRect(noteX + 8, 2, this.laneWidth - 16, 6, 3);
         this.tweens.add({
             targets: gfx, scaleX: 1.6, scaleY: 1.6, alpha: 0,
-            duration: 250, ease: 'Power3',
+            duration: 250, ease: EASE_OUT,
             onComplete: () => gfx.destroy(),
         });
 
@@ -582,7 +598,7 @@ class GameScene extends Phaser.Scene {
             targets: this.laneFlash[lane],
             alpha: 0,
             duration: 150,
-            ease: 'Power2',
+            ease: EASE_OUT,
         });
 
         // Particle explosion
@@ -615,7 +631,7 @@ class GameScene extends Phaser.Scene {
         this.judgmentText.setText(text).setColor(color).setAlpha(1).setScale(0.5);
         this.tweens.add({
             targets: this.judgmentText, scaleX: 1.3, scaleY: 1.3, alpha: 0,
-            duration: 500, ease: 'Power2',
+            duration: 500, ease: EASE_OUT,
             onComplete: () => this.judgmentText.setScale(1),
         });
     }
@@ -628,7 +644,7 @@ class GameScene extends Phaser.Scene {
         }).setOrigin(0.5).setDepth(10);
         this.tweens.add({
             targets: txt, y: txt.y - 60, alpha: 0,
-            duration: 400, ease: 'Power2',
+            duration: 400, ease: EASE_OUT,
             onComplete: () => txt.destroy(),
         });
     }
@@ -656,7 +672,7 @@ class GameScene extends Phaser.Scene {
         }).setOrigin(0.5).setDepth(12).setAlpha(0);
         this.tweens.add({
             targets: banner, alpha: 0.8, y: banner.y - 20,
-            duration: 300, ease: 'Power2',
+            duration: 300, ease: EASE_OUT,
             yoyo: true, hold: 600,
             onComplete: () => banner.destroy(),
         });
@@ -694,7 +710,9 @@ class GameScene extends Phaser.Scene {
         }
     }
 
-    // ---- Pause / Resume (blur/visibility only) ----
+    // ---- Pause / Resume (blur/visibility only).
+    //     Uses Settings overlay as the unified pause surface,
+    //     matching what Space/Esc does. No separate pause screen.
     togglePause(force) {
         if (this.isFinished) return;
         const wantPause = force === true ? true : !this.isPaused;
@@ -703,32 +721,14 @@ class GameScene extends Phaser.Scene {
         if (this.isPaused) {
             this.pauseStartedAt = this.audio.getSongTime();
             this.audio.stopSong();
-            this.showPauseOverlay();
+            if (!this.settingsOverlay) this.openSettings();
         } else {
-            this.pauseDelta += this.audio.getSongTime() - this.pauseStartedAt;
-            this.audio.startSong(this.pauseStartedAt);
-            this.hidePauseOverlay();
+            if (this.settingsOverlay) this.toggleSettings();
+            else {
+                this.pauseDelta += this.audio.getSongTime() - this.pauseStartedAt;
+                this.audio.startSong(this.pauseStartedAt);
+            }
         }
-    }
-
-    showPauseOverlay() {
-        if (this.pauseOverlay) return;
-        const { W, H } = G;
-        this.pauseOverlay = this.add.container(W / 2, H / 2).setDepth(60);
-        const bg = this.add.graphics();
-        bg.fillStyle(0x000000, 0.7);
-        bg.fillRect(-W / 2, -H / 2, W, H);
-        const t1 = this.add.text(0, -20, '⏸ Paused', {
-            fontFamily: 'monospace', fontSize: '36px', color: '#ffd700', fontStyle: 'bold',
-        }).setOrigin(0.5);
-        const t2 = this.add.text(0, 30, 'Space / Esc / P · tap · blur → resume', {
-            fontFamily: 'monospace', fontSize: '13px', color: '#cccccc',
-        }).setOrigin(0.5);
-        this.pauseOverlay.add([bg, t1, t2]);
-    }
-
-    hidePauseOverlay() {
-        if (this.pauseOverlay) { this.pauseOverlay.destroy(); this.pauseOverlay = null; }
     }
 
     // ---- Main update ----
@@ -820,7 +820,6 @@ class GameScene extends Phaser.Scene {
         this.isPlaying = false;
         this.isFinished = true;
         this.audio.stopSong();
-        this.hidePauseOverlay();
 
         const isNewHigh = this.score > HIGH_SCORE;
         if (isNewHigh && this.score > 0) {
@@ -897,12 +896,39 @@ class GameScene extends Phaser.Scene {
         const btnX = cx - 90, btnY = yPos, btnW = 180, btnH = 50;
         btnBg.fillStyle(0xffd700, 0.9);
         btnBg.fillRoundedRect(btnX, btnY, btnW, btnH, 12);
-        this.add.text(cx, btnY + btnH / 2, '🔄 เล่นอีกครั้ง', {
+
+        // Wrap button bg + label in a container so we can scale-on-press.
+        const btnLabel = this.add.text(cx, btnY + btnH / 2, '🔄 เล่นอีกครั้ง', {
             fontFamily: 'monospace', fontSize: '16px', color: '#1a1a1a', fontStyle: 'bold',
         }).setOrigin(0.5).setDepth(52);
+        const btnContainer = this.add.container(cx, btnY + btnH / 2).setDepth(53);
+        // Re-anchor bg relative to container origin
+        const btnBg2 = this.add.graphics();
+        btnBg2.fillStyle(0xffd700, 0.9);
+        btnBg2.fillRoundedRect(-btnW / 2, -btnH / 2, btnW, btnH, 12);
+        btnContainer.add([btnBg2, btnLabel]);
 
         const rz = this.add.zone(cx, btnY + btnH / 2, btnW, btnH)
-            .setInteractive({ useHandCursor: true }).setDepth(53);
+            .setInteractive({ useHandCursor: true }).setDepth(54);
+        // Press feedback — scale 0.97 on down, bounce back on up/out.
+        // Hold the tween ref so repeated presses don't double-fire.
+        let pressTween = null;
+        let buttonPressed = false;
+        const pressDown = () => {
+            if (buttonPressed) return;
+            buttonPressed = true;
+            if (pressTween) pressTween.stop();
+            pressTween = this.tweens.add({ targets: btnContainer, scale: 0.97, duration: 90, ease: EASE_OUT });
+        };
+        const pressUp = () => {
+            if (!buttonPressed) return;
+            buttonPressed = false;
+            if (pressTween) pressTween.stop();
+            pressTween = this.tweens.add({ targets: btnContainer, scale: 1, duration: 140, ease: EASE_OUT });
+        };
+        rz.on('pointerdown', pressDown);
+        rz.on('pointerup', pressUp);
+        rz.on('pointerout', pressUp);
         rz.on('pointerdown', () => {
             // Bug 3: stop audio source before restart to prevent overlap
             this.audio.stopSong();
@@ -987,7 +1013,7 @@ class GameScene extends Phaser.Scene {
             color: '#888', fontStyle: 'bold',
         }).setOrigin(0.5).setDepth(21);
 
-        // Settings button (top-right)
+        // Settings button (top-right) — gear icon with hover + press feedback
         const sBg = this.add.graphics().setDepth(22);
         sBg.fillStyle(0x1a1a3a, 0.85);
         sBg.lineStyle(1, 0x3b4768, 1);
@@ -996,8 +1022,33 @@ class GameScene extends Phaser.Scene {
         const sIcon = this.add.text(W - 31, 32, '⛉', {
             fontFamily: 'monospace', fontSize: '20px', color: '#55d6ff',
         }).setOrigin(0.5).setDepth(23);
+        // Group gear bg+icon in container so we can scale-on-press
+        const sContainer = this.add.container(W - 31, 31).setDepth(23);
+        sBg.setPosition(-19, -19);   // re-anchor relative to container
+        sIcon.setPosition(0, 1);
+        sContainer.add([sBg, sIcon]);
+
         const sZone = this.add.zone(W - 31, 31, 38, 38)
             .setInteractive({ useHandCursor: true }).setDepth(24);
+        // Press feedback (skip hover to avoid double-trigger with hover guard).
+        // Hold the tween ref to avoid double-firing on rapid presses.
+        let sTween = null;
+        let sPressed = false;
+        const sDown = () => {
+            if (sPressed) return;
+            sPressed = true;
+            if (sTween) sTween.stop();
+            sTween = this.tweens.add({ targets: sContainer, scale: 0.92, duration: 90, ease: EASE_OUT });
+        };
+        const sUp = () => {
+            if (!sPressed) return;
+            sPressed = false;
+            if (sTween) sTween.stop();
+            sTween = this.tweens.add({ targets: sContainer, scale: 1, duration: 140, ease: EASE_OUT });
+        };
+        sZone.on('pointerdown', sDown);
+        sZone.on('pointerup', sUp);
+        sZone.on('pointerout', sUp);
         sZone.on('pointerdown', () => this.openSettings());
 
         this.tweens.add({
@@ -1006,6 +1057,7 @@ class GameScene extends Phaser.Scene {
             yoyo: true,
             repeat: -1,
             duration: 600,
+            ease: EASE_OUT,
         });
 
         this.input.once('pointerdown', (pointer) => {
@@ -1015,16 +1067,50 @@ class GameScene extends Phaser.Scene {
         });
     }
 
-    // Make a clickable button label inside the container
+    // Make a clickable button label with press feedback.
+    // Touch target expanded to ≥44px via a zone backdrop (Apple/Google HIG minimum).
+    // Hover effect is conditional on (hover: hover) and (pointer: fine) — no sticky hover on touch.
     _settingsBtn(label, x, y, fn) {
         const t = this.add.text(x, y, label, {
             fontFamily: 'monospace', fontSize: '11px', color: '#55d6ff',
             backgroundColor: '#1a2a4a', padding: { x: 5, y: 3 },
-        }).setOrigin(0.5).setInteractive({ useHandCursor: true });
-        t.on('pointerdown', fn);
-        t.on('pointerover', () => t.setColor('#fff'));
-        t.on('pointerout', () => t.setColor('#55d6ff'));
-        return t;
+        }).setOrigin(0.5);
+        // 44×28 hit zone — meets Apple/Google touch-target *height* (44px).
+        // We add the zone AFTER the overlay exists (caller puts it inside
+        // settingsOverlay), and use (0,0) coords because the overlay translates
+        // button positions to panel center via its own pos.
+        const hitZone = this.add.zone(0, 0, 44, 28)
+            .setInteractive({ useHandCursor: true });
+        // Wrap text in a container (also at overlay-local origin) for scale tween.
+        const wrap = this.add.container(0, 0);
+        wrap.add(t);
+        // Now place the wrap+hitZone at panel-relative (x, y) by setting
+        // their local positions. Caller will add wrap + hitZone to overlay.
+        wrap.setPosition(x, y);
+        hitZone.setPosition(x, y);
+
+        let pressed = false;
+        const down = () => {
+            if (pressed) return;
+            pressed = true;
+            // Apply visual changes BEFORE the scale tween so Phaser's internal
+            // text layout updates run with stable parent state.
+            t.setColor('#fff');
+            this.tweens.add({ targets: wrap, scale: 0.92, duration: 90, ease: EASE_OUT });
+            fn();
+        };
+        const up = () => {
+            if (!pressed) return;
+            pressed = false;
+            // Reset color AFTER scale tween so layout is stable during recalc.
+            t.setColor('#55d6ff');
+            this.tweens.add({ targets: wrap, scale: 1, duration: 140, ease: EASE_OUT });
+        };
+        hitZone.on('pointerdown', down);
+        hitZone.on('pointerup', up);
+        hitZone.on('pointerout', up);
+        // Return an object so caller can add BOTH wrap and hitZone to overlay.
+        return { wrap, hitZone };
     }
 
     // Update the offset/sfx value displays after a change
@@ -1039,8 +1125,8 @@ class GameScene extends Phaser.Scene {
         if (offBar) offBar.clear();
         const sfxBar = this.settingsOverlay.getByName('sfxBar');
         if (sfxBar) sfxBar.clear();
-        if (offBar) { offBar.fillStyle(0x55d6ff, 0.6); offBar.fillRect(-145, -25, 290 * Math.min(1, Math.max(0, (SETTINGS.offset+300)/600)), 6); }
-        if (sfxBar) { sfxBar.fillStyle(0xffd700, 0.6); sfxBar.fillRect(-145, 42, 290 * SETTINGS.sfx, 6); }
+        if (offBar) { offBar.fillStyle(0x55d6ff, 0.6); offBar.fillRect(-145, -33, 290 * Math.min(1, Math.max(0, (SETTINGS.offset+300)/600)), 6); }
+        if (sfxBar) { sfxBar.fillStyle(0xffd700, 0.6); sfxBar.fillRect(-145, 25, 290 * SETTINGS.sfx, 6); }
     }
 
     openSettings() {
@@ -1062,18 +1148,24 @@ class GameScene extends Phaser.Scene {
         const bg = this.add.graphics();
         bg.fillStyle(0x0a0a1a, 0.96);
         bg.lineStyle(2, 0x3b4768, 1);
-        bg.fillRoundedRect(-155, -100, 310, 200, 12);
-        bg.strokeRoundedRect(-155, -100, 310, 200, 12);
+        bg.fillRoundedRect(-160, -130, 320, 260, 12);
+        bg.strokeRoundedRect(-160, -130, 320, 260, 12);
         this.settingsOverlay.add(bg);
 
         // Title
-        const title = this.add.text(0, -88, '⚙ Settings', {
+        const title = this.add.text(0, -110, '⚙ Settings', {
             fontFamily: 'monospace', fontSize: '16px', color: '#ffd700', fontStyle: 'bold',
         }).setOrigin(0.5);
         this.settingsOverlay.add(title);
 
+        // Hint
+        const hint = this.add.text(0, -90, 'Space / Esc ปิด', {
+            fontFamily: 'monospace', fontSize: '10px', color: '#555',
+        }).setOrigin(0.5);
+        this.settingsOverlay.add(hint);
+
         // ═══ OFFSET ═══
-        const offLabel = this.add.text(-145, -60, 'Offset', {
+        const offLabel = this.add.text(-145, -68, 'Offset', {
             fontFamily: 'monospace', fontSize: '12px', color: '#aaa',
         });
         this.settingsOverlay.add(offLabel);
@@ -1082,18 +1174,20 @@ class GameScene extends Phaser.Scene {
         const offBar = this.add.graphics();
         offBar.setName('offBar');
         offBar.fillStyle(0x2a3a5a, 0.8);
-        offBar.fillRect(-145, -25, 290, 6);
+        offBar.fillRect(-145, -33, 290, 6);
         offBar.fillStyle(0x55d6ff, 0.6);
-        offBar.fillRect(-145, -25, 290 * Math.min(1, Math.max(0, (SETTINGS.offset+300)/600)), 6);
+        offBar.fillRect(-145, -33, 290 * Math.min(1, Math.max(0, (SETTINGS.offset+300)/600)), 6);
         this.settingsOverlay.add(offBar);
 
         // Value text
-        const offVal = this.add.text(140, -60, `${SETTINGS.offset|0} ms`, {
+        const offVal = this.add.text(140, -68, `${SETTINGS.offset|0} ms`, {
             fontFamily: 'monospace', fontSize: '12px', color: '#55d6ff',
         }).setOrigin(1, 0).setName('offVal');
         this.settingsOverlay.add(offVal);
 
-        // Offset adjustment buttons
+        // Offset adjustment buttons (add BOTH wrap and hitZone to overlay so
+        // hit zones move with the panel — bare this.add.zone() is scene-level
+        // and ignores the overlay's transform, leaving them off-screen).
         const offBtns = [
             ['-50', () => { SETTINGS.offset = Math.max(-300, SETTINGS.offset - 50); this._refreshSettingsUI(); }, -120],
             ['-10', () => { SETTINGS.offset = Math.max(-300, SETTINGS.offset - 10); this._refreshSettingsUI(); }, -60],
@@ -1101,14 +1195,19 @@ class GameScene extends Phaser.Scene {
             ['+50', () => { SETTINGS.offset = Math.min(300, SETTINGS.offset + 50); this._refreshSettingsUI(); }, 80],
         ];
         for (const [lbl, fn, x] of offBtns) {
-            this.settingsOverlay.add(this._settingsBtn(lbl, x, -37, fn));
+            const { wrap, hitZone } = this._settingsBtn(lbl, x, -45, fn);
+            this.settingsOverlay.add(wrap);
+            this.settingsOverlay.add(hitZone);
         }
         // Reset
-        const resetBtn = this._settingsBtn('⟲', -10, -37, () => { SETTINGS.offset = 0; this._refreshSettingsUI(); });
-        this.settingsOverlay.add(resetBtn);
+        {
+            const { wrap, hitZone } = this._settingsBtn('⟲', -10, -45, () => { SETTINGS.offset = 0; this._refreshSettingsUI(); });
+            this.settingsOverlay.add(wrap);
+            this.settingsOverlay.add(hitZone);
+        }
 
         // ═══ SFX ═══
-        const sfxLabel = this.add.text(-145, -8, 'SFX volume', {
+        const sfxLabel = this.add.text(-145, -10, 'SFX volume', {
             fontFamily: 'monospace', fontSize: '12px', color: '#aaa',
         });
         this.settingsOverlay.add(sfxLabel);
@@ -1117,12 +1216,12 @@ class GameScene extends Phaser.Scene {
         const sfxBar = this.add.graphics();
         sfxBar.setName('sfxBar');
         sfxBar.fillStyle(0x2a3a5a, 0.8);
-        sfxBar.fillRect(-145, 28, 290, 6);
+        sfxBar.fillRect(-145, 25, 290, 6);
         sfxBar.fillStyle(0xffd700, 0.6);
-        sfxBar.fillRect(-145, 28, 290 * SETTINGS.sfx, 6);
+        sfxBar.fillRect(-145, 25, 290 * SETTINGS.sfx, 6);
         this.settingsOverlay.add(sfxBar);
 
-        const sfxVal = this.add.text(140, -8, `${(SETTINGS.sfx*100)|0}%`, {
+        const sfxVal = this.add.text(140, -10, `${(SETTINGS.sfx*100)|0}%`, {
             fontFamily: 'monospace', fontSize: '12px', color: '#ffd700',
         }).setOrigin(1, 0).setName('sfxVal');
         this.settingsOverlay.add(sfxVal);
@@ -1134,21 +1233,23 @@ class GameScene extends Phaser.Scene {
             ['+20', () => { SETTINGS.sfx = Math.min(1, SETTINGS.sfx + 0.2); this._refreshSettingsUI(); }, 80],
         ];
         for (const [lbl, fn, x] of sfxBtns) {
-            this.settingsOverlay.add(this._settingsBtn(lbl, x, 15, fn));
+            const { wrap, hitZone } = this._settingsBtn(lbl, x, 13, fn);
+            this.settingsOverlay.add(wrap);
+            this.settingsOverlay.add(hitZone);
         }
 
         // ═══ CLOSE ═══
         const closeBg = this.add.graphics();
         closeBg.fillStyle(0xff4757, 0.9);
-        closeBg.fillRoundedRect(-40, 72, 80, 26, 8);
+        closeBg.fillRoundedRect(-50, 87, 100, 32, 8);
         this.settingsOverlay.add(closeBg);
 
-        const closeText = this.add.text(0, 85, 'ปิด', {
-            fontFamily: 'monospace', fontSize: '13px', color: '#fff', fontStyle: 'bold',
+        const closeText = this.add.text(0, 103, 'ปิด', {
+            fontFamily: 'monospace', fontSize: '14px', color: '#fff', fontStyle: 'bold',
         }).setOrigin(0.5);
         this.settingsOverlay.add(closeText);
 
-        const closeZone = this.add.zone(0, 85, 80, 30)
+        const closeZone = this.add.zone(0, 103, 100, 32)
             .setInteractive({ useHandCursor: true });
         closeZone.on('pointerdown', () => this.toggleSettings());
         this.settingsOverlay.add(closeZone);
@@ -1194,7 +1295,7 @@ const config = {
 };
 
 async function loadExternalBeatmap(){if(location.protocol==='file:')return false;const jsonPath=G.AUDIO_PATH.replace(/\.[^.]+$/i,'.json');const response=await fetch(jsonPath+'?v='+Date.now());if(!response.ok)throw new Error('beatmap JSON HTTP '+response.status);const data=await response.json();if(!Array.isArray(data.notes)||!data.notes.length)throw new Error('beatmap JSON ไม่มี notes');const notes=data.notes.map(note=>({lane:Math.max(0,Math.min(3,Number(note.lane)||0)),time:Math.max(0,Number(note.time)||0)})).sort((a,b)=>a.time-b.time);BN_L=notes.map(note=>note.lane);BN_T=notes.map(note=>note.time);TOTAL_NOTES=BN_L.length;if(Number.isFinite(Number(data.duration)))SONG_DURATION_MS=Number(data.duration);buildBeatmap();console.info('Loaded external beatmap:',jsonPath,TOTAL_NOTES+' notes,',BEATMAP_NOTES.length+' rebuilt')}
-async function boot(){try{await loadExternalBeatmap()}catch(error){console.warn('External beatmap unavailable; using embedded fallback.',error.message)}const __game=new Phaser.Game(config);return __game}
+async function boot(){try{await loadExternalBeatmap()}catch(error){console.warn('External beatmap unavailable; using embedded fallback.',error.message)}const __game=new Phaser.Game(config);if(location.search.includes('debug'))window.__game=__game;return __game}
 boot();</script>
 <script>document.getElementById('tab-editor').addEventListener('change',function(){document.body.style.overflow=this.checked?'auto':'hidden'});const LANES=['#ff5c72','#ffad4d','#51e39b','#5e9bff'];
 const FALLBACK_L=[0,1,2,3,0,3,2,2,0,1,2,0,0,0,2,2,0,1,2,3,0,1,2,3,0,3,2,3,0,3,2,3,2,1,2,3,0,1,2,3,0,1,2,3,0,1,2,3,0,1,2,2,0,1,2,3,0,3,2,1,0,1,0,3,3,1,0,3,0,1,2,3,1,1,2,0,0,2,2,3,0,1,2,1,0,3,2,0,0,2,0,3,0,1,3,3,3,1,2,1,2,1,2,0,0,0,2,2,0,1,2,3,0,3,2,1,0,2,2,0,0,0,2,3,0,1,2,2,0,2,1,3,0,3,2,0,0,1,2,2,0,3,2,3,0,1,2,0,0];
