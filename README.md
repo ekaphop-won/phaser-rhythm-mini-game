@@ -22,9 +22,9 @@ python3 -m http.server 8080
 |---|---|
 | แตะเลน | กดโน้ต |
 | **D / F / J / K** | กดโน้ตเลน 1-4 (desktop keyboard) |
-| **Space / Esc / P** | pause / resume |
+| **Space / Esc / P** | เปิด/ปิด Settings (pause อัตโนมัติ) |
 | **Tab hidden / window blur** | auto-pause |
-| **⛉ (มุมขวาบน)** | settings (offset, SFX volume) |
+| **⛉ (มุมขวาบน)** | settings (offset, SFX volume) — มี press feedback |
 
 ## 🛠 Beatmap workflow
 
@@ -112,8 +112,13 @@ python3 -m http.server 8080
 ## 📝 Known limitations
 
 - ไม่มี difficulty/level system
-- ไม่มี reduced-motion accessibility option
 - ไม่มี colorblind palette
 - ไม่มี CI/lint/tests (single-file static project)
-- editor ไม่ save state — reload หาย
-- texture leak เมื่อ restart หลายครั้ง (Phaser ไม่ destroy texture เดิม)
+- editor: Undo stack ไม่ persist ข้าม reload (in-memory 50 steps เท่านั้น)
+- reduced-motion + hover guards แล้ว — ดู [CHANGELOG](CHANGELOG.md)
+- texture leak ที่ restart ได้รับการแก้แล้ว (`_cleanupAutoTextures` ใน `SHUTDOWN`)
+
+## 🏷 Releases
+
+ดู [CHANGELOG.md](CHANGELOG.md) สำหรับรายละเอียด release:
+- **`v1.0-ux`** (2026-07-22) — Emil Kowalski-inspired UX pass: unified pause/settings, undo/redo in editor, keyboard shortcuts, press feedback, accessibility gates, Phaser-native settings overlay.
